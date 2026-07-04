@@ -915,8 +915,8 @@ Your support helps improve the project and encourages future open-source contrib
 
 For questions, feedback, or collaboration opportunities:
 
-- **GitHub:** https://github.com/<your-username>
-- **LinkedIn:** https://linkedin.com/in/<your-linkedin>
+- **GitHub:** https://github.com/<shubham17290>
+- **LinkedIn:** https://linkedin.com/in/<https://www.linkedin.com/in/shubham-maurya-99325b380/?skipRedirect=true>
 
 ---
 
