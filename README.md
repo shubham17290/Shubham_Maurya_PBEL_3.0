@@ -40,6 +40,22 @@ Fake_News_Detection_Using_Machine_learning/
 ├── .gitignore                  # Git ignore rules
 └── README.md                   # This file
 ```
+# Homepage
+
+![Homepage](assets/screenshots/homepage.png)
+
+## Prediction
+
+![Prediction](assets/screenshots/prediction.png)
+
+## Fake News
+
+![Fake](assets/screenshots/fake-result.png)
+
+![Banner](assets/banner/banner.png)
+
+![Demo](assets/demo/demo.gif)
+
 
 ## Installation
 
