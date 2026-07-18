@@ -1,0 +1,86 @@
+/* Fake News Detection - Main Stylesheet */
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 50px;
+  background-color: #f9f9f9;
+}
+
+.form-container {
+  max-width: 600px;
+  margin: auto;
+  padding: 30px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: white;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-container h2 {
+  text-align: center;
+  color: #333;
+}
+
+.form-container textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0 20px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: Arial, sans-serif;
+}
+
+.form-container input[type="submit"] {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px;
+  width: 100%;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.form-container input[type="submit"]:hover {
+  background-color: #0056b3;
+}
+
+.result {
+  font-size: 1.5em;
+  text-align: center;
+  margin-top: 25px;
+  padding: 10px;
+  font-weight: bold;
+  border-radius: 5px;
+  color: #333;
+}
+
+/* Flash message styles */
+.alert {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+}
+
+.alert-warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+}
+
+.alert-danger {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+.alert-success {
+  color: #155724;
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
