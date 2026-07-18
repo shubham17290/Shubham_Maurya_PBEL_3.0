@@ -1,11 +1,16 @@
-# train.py (Sirf apne laptop par run karna hai ek baar)
-import pandas as pd
-import re
+from flask import Flask, request, render_template
 import pickle
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
+import re
+
+# YEH LINE SABSE ZAROORI HAI RENDER KE LIYE
+app = Flask(__name__)
+
+# Pre-trained model aur vectorizer ko load kar rahe hain
+model = pickle.load(open("model.pkl", "rb"))
+vectorization = pickle.load(open("vectorizer.pkl", "rb"))
 
 
+# Text Cleaning Function
 def wordopt(text):
     text = str(text).lower()
     text = re.sub(r"https?://\S+|www\.\S+", "", text)
@@ -16,23 +21,27 @@ def wordopt(text):
     return text
 
 
-print("Training model locally...")
-df_fake = pd.read_csv("Fake.csv").head(5000)
-df_true = pd.read_csv("True.csv").head(5000)
+@app.route("/")
+def home():
+    return render_template("index.html")
 
-df_fake["class"] = 0
-df_true["class"] = 1
 
-df_marge = pd.concat([df_fake, df_true], axis=0).sample(frac=1).reset_index(drop=True)
-df_marge["text"] = df_marge["text"].apply(wordopt)
+@app.route("/predict", methods=["POST"])
+def predict():
+    if request.method == "POST":
+        news_text = request.form["news_input"]
 
-vectorization = TfidfVectorizer()
-xv = vectorization.fit_transform(df_marge["text"])
+        # Process input text
+        cleaned_text = wordopt(news_text)
+        vectorized_text = vectorization.transform([cleaned_text])
 
-model = LogisticRegression()
-model.fit(xv, df_marge["class"])
+        # Predict using the loaded model
+        prediction = model.predict(vectorized_text)
+        result = "Real News" if prediction[0] == 1 else "Fake News"
 
-# Files ko save kar rahe hain
-pickle.dump(model, open("model.pkl", "wb"))
-pickle.dump(vectorization, open("vectorizer.pkl", "wb"))
-print("Done! model.pkl and vectorizer.pkl created successfully.")
+        return render_template("index.html", prediction_text=f"Prediction: {result}")
+
+
+if __name__ == "__main__":
+    app.run()
+
