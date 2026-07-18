@@ -52,7 +52,7 @@ Fake_News_Detection_Using_Machine_learning/
 
 ![Fake](assets/screenshots/fake-result.png)
 
-##Banner
+## Banner
 
 ![Banner](assets/banner/banner.png)
 
