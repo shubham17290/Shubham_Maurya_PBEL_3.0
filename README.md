@@ -124,9 +124,7 @@ Example of the prediction result when the entered news is classified as **Real**
 
 ---
 
-# 🎥 Project Demonstration
 
-A short demonstration showing the complete workflow of the application.
 
 <p align="center">
   <img src="assets/demo/demo.gif" alt="Project Demo" width="90%">
