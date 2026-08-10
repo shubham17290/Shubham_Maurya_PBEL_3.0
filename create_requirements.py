@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 # Create requirements.txt with UTF-8 encoding (no BOM)
+# Optimized for Vercel deployment - minimal dependencies only
 
 import os
 
-req_path = r'd:\002 IBM\'S internship\02 Projects\Fake_News_Detection_Using_Machine_learning\requirements.txt'
+req_path = 'requirements.txt'
 
-# The dependencies from the original UTF-16 file
+# Optimized dependencies for Vercel serverless deployment
+# Only includes essential packages needed for the API
 dependencies = """Flask==3.0.3
-gunicorn==22.0.0
-numpy<2.0.0
-pandas==2.2.2
 scikit-learn==1.3.2
-scipy==1.11.4
-Cython==0.29.36
+numpy<2.0.0
 joblib==1.4.2
 """
 
@@ -50,7 +48,15 @@ with open(req_path, 'rb') as f:
 
 # Display the file content
 print("\n" + "="*50)
-print("File content:")
+print("Optimized dependencies for Vercel:")
 print("="*50)
 with open(req_path, 'r', encoding='utf-8') as f:
     print(f.read())
+
+print("\n📦 Dependencies breakdown:")
+print("  Flask==3.0.3       - Web framework (required)")
+print("  scikit-learn==1.3.2 - Model unpickling (required)")
+print("  numpy<2.0.0        - Required by scikit-learn")
+print("  joblib==1.4.2      - Model loading (required)")
+print("\n💾 Total estimated size: ~63 MB (Vercel limit: 500 MB)")
+print("✅ Optimized for Vercel serverless deployment!")
