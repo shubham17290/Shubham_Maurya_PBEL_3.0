@@ -22,7 +22,7 @@ An AI-Powered Fake News Detection Web Application built using <b>Machine Learnin
 
 ## 🌐 Live Demo
 
-🔗 **Application:** https://newsguard-ai-pz3n.onrender.com/
+🔗 **Application:** [https://newsguard-ai-pz3n.onrender.com/](https://fake-news-detector-ten-orcin.vercel.app/)
 
 ---
 
