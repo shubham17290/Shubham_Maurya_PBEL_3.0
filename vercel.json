@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "runtime": "python3.12",
+        "includeFiles": [
+          "model/**/*",
+          "templates/**/*",
+          "static/**/*",
+          "utils/**/*",
+          "routes/**/*",
+          "config.py",
+          "app.py",
+          "requirements.txt"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/app.py"
+    }
+  ],
+  "functions": {
+    "app.py": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
+  "env": {
+    "FLASK_ENV": "production"
+  }
+}
