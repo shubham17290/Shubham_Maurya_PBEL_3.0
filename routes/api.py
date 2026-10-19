@@ -3,7 +3,7 @@ API routes for Fake News Detection Application.
 Provides REST API endpoints for programmatic access.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from typing import Dict, Tuple
 import logging
 
@@ -78,23 +78,16 @@ def api_predict():
         # Get text from request
         text = data.get('text', '').strip()
 
-        # Validate input
-        if not text:
-            return jsonify({
-                'success': False,
-                'error': 'No text provided. Please provide "text" field in JSON.'
-            }), 400
+        # Validate input using shared helper and configured thresholds
+        from utils.validation import validate_news_text
 
-        if len(text) < 50:
+        min_length = current_app.config.get("MIN_TEXT_LENGTH", 50)
+        max_length = current_app.config.get("MAX_TEXT_LENGTH", 50000)
+        validation_error = validate_news_text(text, min_length=min_length, max_length=max_length)
+        if validation_error:
             return jsonify({
                 'success': False,
-                'error': 'Text too short. Minimum 50 characters required.'
-            }), 400
-
-        if len(text) > 50000:
-            return jsonify({
-                'success': False,
-                'error': 'Text too long. Maximum 50,000 characters allowed.'
+                'error': validation_error
             }), 400
 
         # Make prediction

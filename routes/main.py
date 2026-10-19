@@ -3,10 +3,11 @@ Main routes for Fake News Detection Application.
 Handles web page routes.
 """
 
-from flask import Blueprint, render_template, flash, request
+from flask import Blueprint, render_template, flash, request, current_app
 from typing import Optional
 
 from utils.prediction import ModelPredictor
+from utils.validation import validate_news_text
 
 # Create blueprint
 main_bp = Blueprint('main', __name__)
@@ -57,14 +58,17 @@ def predict():
         # Get input from form
         news_text = request.form.get('news_input', '').strip()
 
-        # Validate input
-        validation_error = validate_input(news_text)
+        # Validate input using shared helper and configured thresholds
+        validation_error = validate_news_text(
+            news_text,
+            min_length=current_app.config.get("MIN_TEXT_LENGTH", 50),
+            max_length=current_app.config.get("MAX_TEXT_LENGTH", 50000),
+        )
         if validation_error:
             flash(validation_error, 'warning')
             return render_template('index.html')
 
         # Log prediction request
-        from flask import current_app
         current_app.logger.info(f'Processing prediction request ({len(news_text)} chars)')
 
         # Make prediction
@@ -88,38 +92,11 @@ def predict():
         return render_template('index.html', prediction_text=prediction_text)
 
     except Exception as e:
-        from flask import current_app
         current_app.logger.error(f'Unexpected error in predict: {e}', exc_info=True)
         flash('An unexpected error occurred. Please try again later.', 'danger')
         return render_template('index.html')
 
 
+# Backwards-compatible alias for older callers/tests
 def validate_input(text: str) -> Optional[str]:
-    """
-    Validate user input for prediction.
-
-    Args:
-        text: User input text
-
-    Returns:
-        Error message if validation fails, None if valid
-    """
-    if not text or not isinstance(text, str):
-        return 'Please enter some news text to analyze.'
-
-    text = text.strip()
-
-    if len(text) == 0:
-        return 'Please enter some news text to analyze.'
-
-    if len(text) < 50:
-        return 'Please enter a longer text (at least 50 characters) for accurate prediction.'
-
-    if len(text) > 50000:
-        return 'Text is too long. Please enter less than 50,000 characters.'
-
-    # Check if text contains only whitespace or special characters
-    if not any(char.isalnum() for char in text):
-        return 'Please enter valid text with alphanumeric characters.'
-
-    return None
+    return validate_news_text(text)
