@@ -91,6 +91,11 @@ temp/
 *.tmp
 *.temp
 
+# Local development artifacts (not needed for runtime)
+dev/
+.venv/
+myenv/
+
 # Model files (DO NOT IGNORE - required for deployment)
 # *.pkl
 # *.joblib
