@@ -25,6 +25,9 @@ class Config:
     MODEL_PATH = os.environ.get("MODEL_PATH", "model/model.pkl")
     VECTORIZER_PATH = os.environ.get("VECTORIZER_PATH", "model/vectorizer.pkl")
 
+    # Inference backend: "numpy" (no scikit-learn at runtime) or "sklearn"
+    INFERENCE_BACKEND = os.environ.get("INFERENCE_BACKEND", "numpy").lower()
+
     # Logging
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

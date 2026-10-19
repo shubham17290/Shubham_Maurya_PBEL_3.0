@@ -1,0 +1,16 @@
+{
+  "token_pattern": "(?u)\\b\\w\\w+\\b",
+  "lowercase": true,
+  "ngram_range": [
+    1,
+    1
+  ],
+  "norm": "l2",
+  "use_idf": true,
+  "smooth_idf": true,
+  "sublinear_tf": false,
+  "classes": [
+    0,
+    1
+  ]
+}

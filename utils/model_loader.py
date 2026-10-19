@@ -1,17 +1,18 @@
 """Lazy model loading helper shared by routes."""
 
 import threading
+from pathlib import Path
 from typing import Optional
 
 from flask import current_app
 
-from utils.prediction import ModelPredictor
+from config import BASE_DIR
 
 _lock = threading.Lock()
-_predictor: Optional[ModelPredictor] = None
+_predictor = None
 
 
-def get_predictor() -> Optional[ModelPredictor]:
+def get_predictor():
     global _predictor
     if _predictor is not None and _predictor.is_loaded():
         return _predictor
@@ -19,15 +20,24 @@ def get_predictor() -> Optional[ModelPredictor]:
         if _predictor is not None and _predictor.is_loaded():
             return _predictor
         try:
-            p = ModelPredictor.get_instance(
-                model_path=current_app.config.get("MODEL_PATH"),
-                vectorizer_path=current_app.config.get("VECTORIZER_PATH"),
-            )
+            backend = current_app.config.get("INFERENCE_BACKEND", "numpy").lower()
+            if backend == "numpy":
+                from utils.numpy_predictor import NumpyPredictor
+
+                model_dir = BASE_DIR / "model" / "np_model"
+                p = NumpyPredictor(str(model_dir))
+            else:
+                from utils.prediction import ModelPredictor
+
+                p = ModelPredictor.get_instance(
+                    model_path=current_app.config.get("MODEL_PATH"),
+                    vectorizer_path=current_app.config.get("VECTORIZER_PATH"),
+                )
             if not p.is_loaded():
                 p.load_models()
             _predictor = p
             current_app.predictor = p
-            current_app.logger.info("ML model loaded lazily")
+            current_app.logger.info("ML model loaded lazily (backend=%s)", backend)
             return _predictor
         except Exception as exc:
             current_app.logger.error(f"Lazy model load failed: {exc}")
