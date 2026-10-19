@@ -38,6 +38,17 @@ def home():
     return render_template('index.html')
 
 
+@main_bp.route('/health', methods=['GET'])
+def health():
+    """Convenience health check (alias of /api/health)."""
+    from flask import jsonify
+    is_healthy = predictor is not None and predictor.is_loaded()
+    return jsonify({
+        'status': 'healthy' if is_healthy else 'unhealthy',
+        'model_loaded': is_healthy
+    }), (200 if is_healthy else 503)
+
+
 @main_bp.route('/predict', methods=['POST'])
 def predict():
     """
