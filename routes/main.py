@@ -3,7 +3,8 @@ Main routes for Fake News Detection Application.
 Handles web page routes.
 """
 
-from flask import Blueprint, render_template, flash, request, current_app
+from flask import Blueprint, render_template, flash, request, current_app, session
+import secrets
 from typing import Optional
 
 from utils.prediction import ModelPredictor
@@ -25,7 +26,13 @@ def init_routes(predictor_instance: Optional[ModelPredictor]) -> None:
 
 @main_bp.route('/')
 def home():
-    return render_template('index.html')
+    csrf_token = None
+    if current_app.config.get("CSRF_ENABLED", True):
+        csrf_token = session.get("csrf_token")
+        if not csrf_token:
+            csrf_token = secrets.token_urlsafe(32)
+            session["csrf_token"] = csrf_token
+    return render_template('index.html', csrf_token=csrf_token)
 
 
 @main_bp.route('/health', methods=['GET'])
@@ -43,6 +50,13 @@ def health():
 @limiter.limit("10 per minute")
 def predict():
     try:
+        # CSRF validation for form submissions
+        if current_app.config.get("CSRF_ENABLED", True):
+            token = request.form.get("csrf_token")
+            if not token or token != session.get("csrf_token"):
+                flash("Invalid or missing CSRF token. Please refresh and try again.", "danger")
+                return render_template('index.html'), 400
+
         model = get_predictor()
         if model is None or not model.is_loaded():
             flash('System error: Model not loaded. Please contact administrator.', 'danger')

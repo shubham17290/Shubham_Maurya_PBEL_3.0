@@ -42,6 +42,9 @@ class Config:
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False
 
+    # CSRF protection for form submissions
+    CSRF_ENABLED = os.environ.get("CSRF_ENABLED", "true").lower() in ("1", "true", "yes")
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""
@@ -68,6 +71,7 @@ class TestingConfig(Config):
     SECRET_KEY = os.environ.get("SECRET_KEY", "test-secret-key")
     # Disable CSRF/secure cookies conveniences for tests
     SESSION_COOKIE_SECURE = False
+    CSRF_ENABLED = False
 
 
 # Configuration dictionary
