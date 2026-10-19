@@ -103,43 +103,24 @@ def initialize_security(app: Flask) -> None:
 
 
 def initialize_components(app: Flask) -> None:
-    try:
-        app.logger.info("Initializing application components...")
+    app.logger.info("Initializing application components...")
 
-        # Load ML model using paths from configuration
-        predictor = ModelPredictor.get_instance(
-            model_path=app.config["MODEL_PATH"],
-            vectorizer_path=app.config["VECTORIZER_PATH"],
-        )
-        predictor.load_models()
+    # Model is loaded lazily on first request to keep cold starts fast and
+    # allow the app to boot even if the model files are temporarily missing.
+    predictor = None
+    app.predictor = predictor
 
-        # Store predictor in app context
-        app.predictor = predictor
+    # Initialize routes (predictor will be resolved lazily)
+    from routes.main import init_routes
 
-        # Initialize routes with predictor
-        from routes.main import init_routes
+    init_routes(predictor)
 
-        init_routes(predictor)
+    # Initialize API routes (predictor will be resolved lazily)
+    from routes.api import init_api_routes
 
-        # Initialize API routes with predictor
-        from routes.api import init_api_routes
+    init_api_routes(predictor)
 
-        init_api_routes(predictor)
-
-        app.logger.info("Application components initialized successfully")
-        app.logger.info("ML models loaded and ready")
-
-    except FileNotFoundError as e:
-        app.logger.critical(f"Failed to initialize: Model files not found - {e}")
-        app.logger.critical(
-            "Please ensure model/model.pkl and model/vectorizer.pkl exist"
-        )
-        raise RuntimeError("Model files not found") from e
-
-    except Exception as e:
-        app.logger.critical(f"Failed to initialize application: {e}")
-        app.logger.critical("Application cannot start without ML models")
-        raise RuntimeError("Failed to initialize application") from e
+    app.logger.info("Application components initialized (model will load lazily)")
 
 
 def register_blueprints(app: Flask) -> None:
