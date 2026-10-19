@@ -479,6 +479,16 @@ The first article should generally be classified as **Real**, whereas the second
 
 The Fake News Detection system uses a **Logistic Regression** classification model to determine whether a news article is **Real** or **Fake**.
 
+### Evaluation
+
+With a labeled CSV (columns `text`, `label` where 0=Fake, 1=Real):
+
+```bash
+python scripts/evaluate.py data/labeled.csv
+```
+
+This prints accuracy/precision/recall/F1 and writes the results into `model/metadata.json`.
+
 Logistic Regression is a supervised machine learning algorithm widely used for binary classification problems. Since this project has only two classes (Real and Fake), it is an appropriate and efficient choice.
 
 ---

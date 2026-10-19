@@ -1,0 +1,17 @@
+{
+  "model_type": "LogisticRegression",
+  "classes": [
+    0,
+    1
+  ],
+  "n_features": 85834,
+  "vectorizer": "TfidfVectorizer",
+  "vocab_size": 85834,
+  "ngram_range": [
+    1,
+    1
+  ],
+  "max_features": null,
+  "lowercase": true,
+  "sklearn_version": "1.3.1"
+}
