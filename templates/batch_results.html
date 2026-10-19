@@ -1,44 +1,106 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Batch Results</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <div class="form-container" style="max-width:900px;">
-      <h2>📊 Batch Results</h2>
-      <p><a href="/batch">← New batch</a> | <a href="/">Home</a></p>
+{% extends "base.html" %}
 
-      <p>Total: {{ total }} | Successful: {{ successful }} | Failed: {{ failed }}</p>
-      <a href="/batch/download" class="submit-btn" style="display:inline-block;width:auto;padding:8px 16px;text-decoration:none;">Download CSV</a>
+{% block title %}Batch Results — {{ total }} articles{% endblock %}
+{% block description %}Summary and per-article predictions for the uploaded batch, with a downloadable CSV of full results.{% endblock %}
 
-      <table style="width:100%;border-collapse:collapse;margin-top:16px;font-size:0.9em;">
-        <thead>
-          <tr>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">#</th>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Prediction</th>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Confidence</th>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Status</th>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Text (preview)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in preview %}
-          <tr>
-            <td style="padding:6px;">{{ r.row_id }}</td>
-            <td style="padding:6px;">{{ r.prediction or "-" }}</td>
-            <td style="padding:6px;">{{ r.confidence or "-" }}</td>
-            <td style="padding:6px;">{{ r.status }}</td>
-            <td style="padding:6px;">{{ r.text[:80] }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% if total > 20 %}
-      <p style="margin-top:8px;font-size:0.85em;color:#666;">Showing first 20 of {{ total }} rows. Download CSV for full results.</p>
-      {% endif %}
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <h1>Batch Results</h1>
+    <p class="card__subtitle">{{ total }} article{{ '' if total == 1 else 's' }} processed. The table below previews the first rows; download the CSV for the full data set.</p>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <p class="stat-card__label">Total articles</p>
+      <p class="stat-card__value">{{ total }}</p>
     </div>
-  </body>
-</html>
+    <div class="stat-card">
+      <p class="stat-card__label">Successful</p>
+      <p class="stat-card__value">{{ successful }}</p>
+    </div>
+    <div class="stat-card stat-card--failed">
+      <p class="stat-card__label">Failed / skipped</p>
+      <p class="stat-card__value">{{ failed }}</p>
+    </div>
+    <div class="stat-card stat-card--real">
+      <p class="stat-card__label">Real</p>
+      <p class="stat-card__value">{{ real_count }}</p>
+    </div>
+    <div class="stat-card stat-card--fake">
+      <p class="stat-card__label">Fake</p>
+      <p class="stat-card__value">{{ fake_count }}</p>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <a href="{{ url_for('main.batch_download') }}" class="btn btn--primary">Download CSV</a>
+    <a href="{{ url_for('main.batch_form') }}" class="btn btn--secondary">New batch</a>
+  </div>
+
+  <div class="filter-bar filter-bar--spaced">
+    <div class="field">
+      <label for="result-filter">Show rows</label>
+      <select id="result-filter" data-filter-scope="#batch-table">
+        <option value="all" selected>All results</option>
+        <option value="real">Real news</option>
+        <option value="fake">Fake news</option>
+        <option value="failed">Failed / skipped</option>
+      </select>
+    </div>
+    <p class="muted small" id="filter-status" role="status" aria-live="polite">
+      Showing all {{ preview_count }} previewed rows.
+    </p>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table responsive-table" id="batch-table">
+      <caption class="visually-hidden">Per-article batch predictions</caption>
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Prediction</th>
+          <th scope="col">Confidence</th>
+          <th scope="col">Status</th>
+          <th scope="col">Text preview</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in preview %}
+        <tr data-label="{% if r.prediction == 'Real News' %}real{% elif r.prediction == 'Fake News' %}fake{% else %}failed{% endif %}">
+          <td data-label="Row" class="num">{{ r.row_id }}</td>
+          <td data-label="Prediction">
+            {% if r.prediction == 'Real News' %}
+              <span class="badge badge--real">Real</span>
+            {% elif r.prediction == 'Fake News' %}
+              <span class="badge badge--fake">Fake</span>
+            {% else %}
+              <span class="badge badge--muted">—</span>
+            {% endif %}
+          </td>
+          <td data-label="Confidence" class="num">
+            {% if r.confidence %}{{ "%.1f"|format(r.confidence|float * 100) }}%{% else %}—{% endif %}
+          </td>
+          <td data-label="Status">
+            {% if r.status == 'ok' %}
+              <span class="badge badge--muted">OK</span>
+            {% else %}
+              <span class="small muted">{{ r.status }}</span>
+            {% endif %}
+          </td>
+          <td data-label="Text preview" class="cell-text">{{ r.text[:160] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total > preview_count %}
+  <p class="hint">Showing the first {{ preview_count }} of {{ total }} rows. Download the CSV for complete results.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='batch.js') }}" defer></script>
+{% endblock %}

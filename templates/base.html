@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}NewsGuard AI — Fake News Detection{% endblock %}</title>
+    <meta name="description" content="{% block description %}Check whether a news article reads as real or fake using a machine-learning model.{% endblock %}" />
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="site-header">
+      <div class="shell site-header__inner">
+        <a class="brand" href="{{ url_for('main.home') }}">
+          <svg class="brand__mark" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false">
+            <path d="M12 2.5 4.5 5.5v6c0 4.6 3.1 8.4 7.5 10 4.4-1.6 7.5-5.4 7.5-10v-6L12 2.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="m8.8 12.2 2.2 2.2 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="brand__name">NewsGuard&nbsp;AI</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Primary">
+          {% set ep = request.endpoint %}
+          <a href="{{ url_for('main.home') }}"
+             class="site-nav__link{% if ep == 'main.home' %} is-active{% endif %}"
+             {% if ep == 'main.home' %}aria-current="page"{% endif %}>Home</a>
+          <a href="{{ url_for('main.batch_form') }}"
+             class="site-nav__link{% if ep in ('main.batch_form', 'main.batch_process', 'main.batch_download') %} is-active{% endif %}"
+             {% if ep in ('main.batch_form', 'main.batch_process', 'main.batch_download') %}aria-current="page"{% endif %}>Batch</a>
+          <a href="{{ url_for('main.history_page') }}"
+             class="site-nav__link{% if ep in ('main.history_page', 'main.history_detail', 'main.history_clear') %} is-active{% endif %}"
+             {% if ep in ('main.history_page', 'main.history_detail', 'main.history_clear') %}aria-current="page"{% endif %}>History</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main-content" class="shell" tabindex="-1">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-stack" aria-live="polite">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}" role="alert">
+                <span class="alert__text">{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell site-footer__inner">
+        <p class="site-footer__note">
+          Educational project. Predictions are statistical estimates from a logistic-regression model
+          and are not a substitute for professional fact-checking.
+        </p>
+      </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

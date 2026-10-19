@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm — Clear prediction history{% endblock %}
+{% block description %}Confirmation step before deleting the stored prediction history.{% endblock %}
+
+{% block content %}
+<div class="card card--narrow">
+  <div class="card__header">
+    <h1>Clear all prediction history?</h1>
+    <p class="card__subtitle">
+      This permanently removes every stored prediction from the local database.
+      This action cannot be undone.
+    </p>
+  </div>
+
+  <div class="btn-row">
+    <a class="btn btn--secondary" href="{{ url_for('main.history_page') }}">Cancel — keep my history</a>
+    <form method="post" action="{{ url_for('main.history_clear') }}">
+      {% if csrf_token %}
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% endif %}
+      <input type="hidden" name="confirm" value="1">
+      <button type="submit" class="btn btn--danger">Yes, delete all history</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

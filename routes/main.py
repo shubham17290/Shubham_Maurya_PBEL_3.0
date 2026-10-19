@@ -26,15 +26,48 @@ def init_routes(predictor_instance: Optional[ModelPredictor]) -> None:
     predictor = predictor_instance
 
 
+def _get_csrf_token() -> Optional[str]:
+    """Return the session CSRF token, creating it when protection is enabled."""
+    if not current_app.config.get("CSRF_ENABLED", True):
+        return None
+    token = session.get("csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf_token"] = token
+    return token
+
+
+def _csrf_valid() -> bool:
+    """Validate the CSRF token on a form submission when protection is enabled."""
+    if not current_app.config.get("CSRF_ENABLED", True):
+        return True
+    token = request.form.get("csrf_token")
+    return bool(token) and token == session.get("csrf_token")
+
+
+def _limits():
+    """Current min/max text length limits (shared by templates and validation)."""
+    return (
+        current_app.config.get("MIN_TEXT_LENGTH", 50),
+        current_app.config.get("MAX_TEXT_LENGTH", 50000),
+    )
+
+
+def _render_index(**kwargs):
+    """Render the home page with CSRF token and length limits always present."""
+    min_length, max_length = _limits()
+    return render_template(
+        "index.html",
+        csrf_token=_get_csrf_token(),
+        min_length=min_length,
+        max_length=max_length,
+        **kwargs,
+    )
+
+
 @main_bp.route('/')
 def home():
-    csrf_token = None
-    if current_app.config.get("CSRF_ENABLED", True):
-        csrf_token = session.get("csrf_token")
-        if not csrf_token:
-            csrf_token = secrets.token_urlsafe(32)
-            session["csrf_token"] = csrf_token
-    return render_template('index.html', csrf_token=csrf_token)
+    return _render_index()
 
 
 @main_bp.route('/health', methods=['GET'])
@@ -53,27 +86,26 @@ def health():
 def predict():
     try:
         # CSRF validation for form submissions
-        if current_app.config.get("CSRF_ENABLED", True):
-            token = request.form.get("csrf_token")
-            if not token or token != session.get("csrf_token"):
-                flash("Invalid or missing CSRF token. Please refresh and try again.", "danger")
-                return render_template('index.html'), 400
+        if not _csrf_valid():
+            flash("Invalid or missing CSRF token. Please refresh and try again.", "danger")
+            return _render_index(), 400
 
         model = get_predictor()
         if model is None or not model.is_loaded():
             flash('System error: Model not loaded. Please contact administrator.', 'danger')
-            return render_template('index.html')
+            return _render_index()
 
         news_text = request.form.get('news_input', '').strip()
 
+        min_length, max_length = _limits()
         validation_error = validate_news_text(
             news_text,
-            min_length=current_app.config.get("MIN_TEXT_LENGTH", 50),
-            max_length=current_app.config.get("MAX_TEXT_LENGTH", 50000),
+            min_length=min_length,
+            max_length=max_length,
         )
         if validation_error:
             flash(validation_error, 'warning')
-            return render_template('index.html')
+            return _render_index()
 
         current_app.logger.info(f'Processing prediction request ({len(news_text)} chars)')
 
@@ -82,25 +114,29 @@ def predict():
         except ValueError as e:
             current_app.logger.warning(f'Invalid input: {e}')
             flash(f'Invalid input: {str(e)}', 'warning')
-            return render_template('index.html')
+            return _render_index()
         except RuntimeError as e:
             current_app.logger.error(f'Prediction error: {e}')
             flash('Prediction failed. Please try again.', 'danger')
-            return render_template('index.html')
+            return _render_index()
 
         current_app.logger.info(f'Prediction: {result} (confidence: {confidence:.2%})')
         save_prediction(result, confidence, "single", news_text, "ok")
         prediction_text = f'Prediction: {result} (Confidence: {confidence:.2%})'
-        return render_template('index.html', prediction_text=prediction_text)
+        prediction_class = 'is-real' if result == 'Real News' else 'is-fake'
+        return _render_index(prediction_text=prediction_text, prediction_class=prediction_class)
 
     except Exception as e:
         current_app.logger.error(f'Unexpected error in predict: {e}', exc_info=True)
         flash('An unexpected error occurred. Please try again later.', 'danger')
-        return render_template('index.html')
+        return _render_index()
 
 
 def validate_input(text: str) -> Optional[str]:
     return validate_news_text(text)
+
+
+PER_PAGE = 20
 
 
 @main_bp.route("/history", methods=["GET"])
@@ -110,6 +146,11 @@ def history_page():
         label = None
     if label == "":
         label = None
+
+    q = (request.args.get("q") or "").strip()
+    if len(q) > 100:
+        q = q[:100]
+
     try:
         page = int(request.args.get("page", 1))
     except (TypeError, ValueError):
@@ -118,17 +159,12 @@ def history_page():
         page = 1
     if page > 10000:
         page = 10000
-    per_page = 20
-    offset = (page - 1) * per_page
-    items = list_predictions(limit=per_page, offset=offset, label=label)
-    total = count_predictions(label)
-    pages = (total + per_page - 1) // per_page if total else 1
-    csrf_token = None
-    if current_app.config.get("CSRF_ENABLED", True):
-        csrf_token = session.get("csrf_token")
-        if not csrf_token:
-            csrf_token = secrets.token_urlsafe(32)
-            session["csrf_token"] = csrf_token
+
+    offset = (page - 1) * PER_PAGE
+    items = list_predictions(limit=PER_PAGE, offset=offset, label=label, search=q or None)
+    total = count_predictions(label, search=q or None)
+    pages = (total + PER_PAGE - 1) // PER_PAGE if total else 1
+
     return render_template(
         "history.html",
         items=items,
@@ -136,7 +172,8 @@ def history_page():
         pages=pages,
         total=total,
         label=label or "",
-        csrf_token=csrf_token,
+        q=q,
+        csrf_token=_get_csrf_token(),
     )
 
 
@@ -145,17 +182,27 @@ def history_detail(pid):
     item = get_prediction(pid)
     if not item:
         flash("Prediction not found.", "warning")
-        return render_template("history.html", items=[], page=1, pages=1, total=0, label="")
+        return redirect(url_for("main.history_page"))
     return render_template("history_detail.html", item=item)
 
 
 @main_bp.route("/history/clear", methods=["POST"])
 def history_clear():
-    if current_app.config.get("CSRF_ENABLED", True):
-        token = request.form.get("csrf_token")
-        if not token or token != session.get("csrf_token"):
-            flash("Invalid or missing CSRF token.", "danger")
-            return render_template("history.html", items=[], page=1, pages=1, total=0, label="")
+    """Clear history. Deletion happens only when the confirmation field is present.
+
+    The history page submits this form through a confirmation dialog (JS) or
+    renders a confirmation step (no JS), so a single accidental click can
+    never delete records.
+    """
+    if not _csrf_valid():
+        flash("Invalid or missing CSRF token.", "danger")
+        return redirect(url_for("main.history_page"))
+
+    confirmed = request.form.get("confirm") == "1"
+    if not confirmed:
+        # First step: show an explicit confirmation page (works without JS).
+        return render_template("history_confirm.html", csrf_token=_get_csrf_token())
+
     ok = clear_all()
     if ok:
         flash("History cleared.", "success")
@@ -164,47 +211,50 @@ def history_clear():
     return redirect(url_for("main.history_page"))
 
 
+def _render_batch(**kwargs):
+    """Render the batch upload page with CSRF token and effective limits."""
+    return render_template(
+        "batch.html",
+        csrf_token=_get_csrf_token(),
+        batch_max_rows=current_app.config.get("BATCH_MAX_ROWS", 1000),
+        batch_max_file_mb=current_app.config.get("BATCH_MAX_FILE_SIZE", 5 * 1024 * 1024) // (1024 * 1024),
+        **kwargs,
+    )
+
+
 @main_bp.route("/batch", methods=["GET"])
 def batch_form():
-    csrf_token = None
-    if current_app.config.get("CSRF_ENABLED", True):
-        csrf_token = session.get("csrf_token")
-        if not csrf_token:
-            csrf_token = secrets.token_urlsafe(32)
-            session["csrf_token"] = csrf_token
-    return render_template("batch.html", csrf_token=csrf_token)
+    return _render_batch()
 
 
 @main_bp.route("/batch", methods=["POST"])
 def batch_process():
-    if current_app.config.get("CSRF_ENABLED", True):
-        token = request.form.get("csrf_token")
-        if not token or token != session.get("csrf_token"):
-            flash("Invalid or missing CSRF token. Please refresh and try again.", "danger")
-            return render_template("batch.html"), 400
+    if not _csrf_valid():
+        flash("Invalid or missing CSRF token. Please refresh and try again.", "danger")
+        return _render_batch(), 400
 
     if "file" not in request.files:
         flash("No file uploaded.", "danger")
-        return render_template("batch.html")
+        return _render_batch()
 
     f = request.files["file"]
     if not f or not f.filename:
         flash("No file selected.", "danger")
-        return render_template("batch.html")
+        return _render_batch()
 
     filename = f.filename.lower()
     if not (filename.endswith(".csv") or filename.endswith(".txt")):
         flash("Unsupported file type. Please upload a CSV or TXT file.", "danger")
-        return render_template("batch.html")
+        return _render_batch()
 
     data = f.read()
     max_size = current_app.config.get("BATCH_MAX_FILE_SIZE", 5 * 1024 * 1024)
     if len(data) == 0:
         flash("Uploaded file is empty.", "danger")
-        return render_template("batch.html")
+        return _render_batch()
     if len(data) > max_size:
         flash(f"File too large. Maximum {max_size // (1024*1024)} MB allowed.", "danger")
-        return render_template("batch.html")
+        return _render_batch()
 
     try:
         if filename.endswith(".csv"):
@@ -214,26 +264,27 @@ def batch_process():
     except Exception as exc:
         current_app.logger.warning("Batch file parse failed: %s", exc)
         flash("Could not parse file. Please check the format and try again.", "danger")
-        return render_template("batch.html")
+        return _render_batch()
 
     max_rows = current_app.config.get("BATCH_MAX_ROWS", 1000)
     if len(articles) == 0:
         flash("No articles found in file.", "danger")
-        return render_template("batch.html")
+        return _render_batch()
     if len(articles) > max_rows:
         flash(f"Too many rows. Maximum {max_rows} articles allowed.", "danger")
-        return render_template("batch.html")
+        return _render_batch()
 
     model = get_predictor()
     if model is None or not model.is_loaded():
         flash("Model not loaded. Please try again later.", "danger")
-        return render_template("batch.html")
+        return _render_batch()
 
+    min_length, max_length = _limits()
     results = process_articles(
         articles,
         model,
-        min_length=current_app.config.get("MIN_TEXT_LENGTH", 50),
-        max_length=current_app.config.get("MAX_TEXT_LENGTH", 50000),
+        min_length=min_length,
+        max_length=max_length,
     )
 
     csv_bytes = results_to_csv(results)
@@ -245,6 +296,8 @@ def batch_process():
 
     ok = sum(1 for r in results if r["status"] == "ok")
     failed = len(results) - ok
+    real_count = sum(1 for r in results if r["prediction"] == "Real News")
+    fake_count = sum(1 for r in results if r["prediction"] == "Fake News")
     preview = results[:20]
 
     return render_template(
@@ -252,7 +305,10 @@ def batch_process():
         total=len(results),
         successful=ok,
         failed=failed,
+        real_count=real_count,
+        fake_count=fake_count,
         preview=preview,
+        preview_count=len(preview),
     )
 
 
@@ -262,7 +318,7 @@ def batch_download():
     b64 = session.get("batch_csv")
     if not b64:
         flash("No batch results available. Please upload a file first.", "warning")
-        return render_template("batch.html")
+        return redirect(url_for("main.batch_form"))
     data = base64.b64decode(b64)
     from flask import Response
     return Response(

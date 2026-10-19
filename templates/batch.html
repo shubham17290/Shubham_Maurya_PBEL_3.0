@@ -1,37 +1,68 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Batch Prediction</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <div class="form-container">
-      <h2>📦 Batch Prediction</h2>
-      <p><a href="/">← Back to single prediction</a></p>
+{% extends "base.html" %}
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
+{% block title %}Batch Prediction — Upload CSV or TXT{% endblock %}
+{% block description %}Upload a CSV or TXT file of news articles and get Real/Fake predictions for every row, with a downloadable CSV of results.{% endblock %}
 
-      <form action="/batch" method="post" enctype="multipart/form-data">
-        {% if csrf_token %}
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        {% endif %}
-        <label for="file">Upload CSV or TXT file:</label>
-        <input type="file" name="file" id="file" accept=".csv,.txt" required>
-        <p class="hint">
-          CSV: include a header with a text column (text/article/content/news/body).<br>
-          TXT: one article per line, or articles separated by a blank line.<br>
-          Max file size: 5 MB. Max 1000 articles.
-        </p>
-        <button type="submit" class="submit-btn">Process Batch</button>
-      </form>
+{% block content %}
+<div class="card card--narrow">
+  <div class="card__header">
+    <h1>Batch Prediction</h1>
+    <p class="card__subtitle">
+      Upload a CSV or TXT file and get a prediction for every article, with a
+      downloadable CSV of the full results.
+    </p>
+  </div>
+
+  <form id="batch-form" action="{{ url_for('main.batch_process') }}" method="post"
+        enctype="multipart/form-data" data-max-bytes="{{ (batch_max_file_mb | default(5)) * 1024 * 1024 }}">
+    {% if csrf_token %}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% endif %}
+
+    <div class="field">
+      <span class="field__label" id="dropzone-label">Results file</span>
+      <div class="dropzone" id="dropzone" aria-describedby="batch-hints">
+        <input type="file" name="file" id="file" accept=".csv,.txt"
+               aria-labelledby="dropzone-label" required>
+        <svg class="dropzone__icon" viewBox="0 0 24 24" width="34" height="34" aria-hidden="true" focusable="false">
+          <path d="M12 16V4m0 0 4 4m-4-4-4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+        <p class="dropzone__title">Drag &amp; drop your file here</p>
+        <p class="dropzone__hint">or click to browse — CSV and TXT only</p>
+      </div>
+
+      <div class="file-summary" id="file-summary" hidden>
+        <span class="file-summary__name" id="file-name"></span>
+        <button type="button" class="btn btn--secondary btn--sm" id="file-remove">Remove file</button>
+      </div>
+
+      <p class="upload-error" id="upload-error" role="alert" hidden></p>
+
+      <p class="hint" id="batch-hints">
+        <strong>CSV:</strong> include a header with a text column (<code>text</code>,
+        <code>article</code>, <code>content</code>, <code>news</code>, <code>body</code> or <code>headline</code>).<br>
+        <strong>TXT:</strong> one article per line, or articles separated by a blank line.<br>
+        <strong>Limits:</strong> up to {{ batch_max_file_mb | default(5) }} MB, {{ batch_max_rows | default(1000) }} articles per file.
+      </p>
     </div>
-  </body>
-</html>
+
+    <div class="btn-row">
+      <button type="submit" id="batch-submit" class="btn btn--primary">Process batch</button>
+      <a class="btn btn--secondary" href="{{ url_for('main.home') }}">Back to single prediction</a>
+    </div>
+  </form>
+
+  <div class="uploading" id="uploading" hidden>
+    <span class="spinner" aria-hidden="true"></span>
+    <span id="uploading-text">Uploading and processing your file. This can take a moment for large batches…</span>
+    <span class="progress" role="presentation"><span class="progress__bar"></span></span>
+  </div>
+
+  <p id="batch-status" class="visually-hidden" role="status" aria-live="polite"></p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='batch.js') }}" defer></script>
+{% endblock %}

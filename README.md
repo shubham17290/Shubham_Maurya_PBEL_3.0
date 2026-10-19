@@ -389,6 +389,40 @@ Example Response
 
 ---
 
+## JSON Prediction API
+
+### POST /api/predict
+
+Request body:
+
+```json
+{ "text": "news article text..." }
+```
+
+Response fields: `success`, `prediction`, `confidence`, `confidence_percentage`,
+`low_confidence`, `text_length`, `prediction_id`, `probabilities`, `explanation`.
+
+- `probabilities` is an object keyed by class label, e.g.
+  `{"Real News": 0.83, "Fake News": 0.17}` — clients must read it by label, never by
+  position. It is omitted entirely when the model cannot produce valid values.
+- `explanation` contains `supporting` and `opposing` top features plus a note.
+- Single predictions submitted through the web UI are stored in history, and
+  `prediction_id` lets clients attach feedback to that record.
+
+### POST /api/feedback
+
+Request body:
+
+```json
+{ "prediction_id": 12, "feedback": "helpful" }
+```
+
+Accepted `feedback` values: `helpful`, `not_helpful`. With CSRF protection enabled, send
+the session token in the `X-CSRF-Token` header. The first recorded feedback for a
+prediction is kept; later submissions are acknowledged but do not overwrite it.
+
+---
+
 # 🧪 Testing the Application
 
 The application can be tested using the following steps.
@@ -803,6 +837,56 @@ It helps others discover the project and motivates future improvements.
 
 # New Features
 
+## UI / UX Improvements
+
+- **Shared layout**: every page extends a common `base.html` with consistent navigation
+  (active item highlighted via `aria-current`), descriptive per-page titles, a favicon,
+  and centralized flash messages.
+- **Result card**: verdict with icon, model confidence bar, per-class probability
+  comparison, low-confidence warning banner, and readable feature-contribution bars.
+- **Probability display**: probabilities are read from the label → value mapping returned
+  by the API (never positional order), bounded to [0, 1], and hidden entirely when the
+  values are missing or inconsistent — nothing is invented.
+- **Explanation display**: feature contributions render as labeled mini-bars normalized
+  to the largest contribution in the current result; the printed value keeps its sign and
+  is not presented as a percentage. A note clarifies that contributions describe model
+  behavior, not factual proof.
+- **Batch upload**: drag-and-drop zone with a conventional file-picker fallback, accepted
+  formats and limits shown on the page, client-side checks (extension, empty file, size)
+  on top of server-side validation, filename/remove/replace controls, and an honest
+  indeterminate “processing” indicator with `aria-busy` — no fake percentage progress.
+- **Batch results**: stat cards (total / successful / failed / real / fake), label badges,
+  formatted confidences, a row filter (all / real / fake / failed), and tables that become
+  cards on narrow screens.
+- **History**: label badges, relative timestamps (exact timestamp preserved in the
+  `title` attribute with a server-rendered fallback when JavaScript is unavailable),
+  text search, auto-applied label filter, filters preserved across pagination, and
+  polished empty states.
+- **Clear-history safety**: deleting history requires an explicit confirmation step.
+  With JavaScript the request goes through a native confirmation dialog; without it the
+  server renders a confirmation page. CSRF is enforced either way, and canceling never
+  deletes anything.
+- **Feedback control**: an optional “Was this prediction helpful?” control under each
+  result, persisted per prediction (see below).
+- **Design system**: CSS custom properties for colors, spacing, radius, shadows, and
+  focus rings; light and dark themes via `prefers-color-scheme`; reduced-motion support;
+  visible keyboard focus states. No frontend framework and no third-party assets
+  (compatible with the strict Talisman CSP; system font stack only).
+- **Input UX**: labeled character counter with a minimum-length hint, “Try an example
+  article” button, Ctrl+Enter to submit while editing the article, focus moved to the
+  result heading after a prediction, and live-region announcements for loading/errors.
+
+## Prediction Feedback
+
+- Endpoint: `POST /api/feedback` with `{"prediction_id": 12, "feedback": "helpful"}`.
+  Accepted values: `helpful`, `not_helpful`.
+- The first feedback submitted for a prediction is kept; later submissions are
+  acknowledged but never overwrite it.
+- Feedback is stored in a dedicated `feedback` column, separate from the model’s
+  predicted label, and is treated as an opinion signal — never as verified ground truth.
+- With CSRF protection enabled, requests must include the session token in the
+  `X-CSRF-Token` header.
+
 ## Prediction Explainability
 Each prediction returns the top supporting and opposing words based on TF-IDF x model weight.
 Positive contributions support "Real News"; negative support "Fake News".
@@ -818,14 +902,29 @@ Upload a CSV (with a text/article/content/news/body column) or TXT (one article 
 ## Prediction History
 Predictions are stored in a local SQLite database (history.db).
 - Newest-first, paginated (20 per page), filterable by label.
-- Detail view per prediction.
-- Clear history with confirmation.
+- Full-text search over stored excerpts (`/history?q=...`), combined with the label filter;
+  both persist across pagination links.
+- Detail view per prediction, including recorded feedback.
+- Clear history requires explicit confirmation and CSRF; canceling deletes nothing.
 - Excerpt length configurable via HISTORY_EXCERPT_LENGTH.
 
 ### Database initialization
 The database and table are created automatically on first use. No manual migration needed.
+Existing databases are migrated automatically: the `feedback` column is added when missing.
 To change the location: set HISTORY_DB_PATH.
 
 ### Running tests
     pip install -r requirements-dev.txt
     pytest -q
+
+The automated test suite lives in the tracked `tests/` directory (44 tests) and is also
+discoverable with an explicit path: `pytest tests -q` from the repository root.
+
+The suite covers route rendering, template inheritance and active navigation, probability
+mapping (label-keyed, validated), explanation payload edge cases (empty/missing/invalid),
+batch upload validation and result-count consistency, history search/filter/pagination and
+the two-step clear confirmation, CSRF enforcement for destructive actions and feedback,
+the feedback duplicate policy, database migration of pre-existing histories, and
+design-system/security regression checks.
+Tests run against an isolated temporary history database and never touch a real
+`history.db`.

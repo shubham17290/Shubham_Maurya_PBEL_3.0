@@ -1,25 +1,64 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Prediction #{{ item.id }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <div class="form-container">
-      <h2>Prediction #{{ item.id }}</h2>
-      <p><a href="/history">← Back to history</a></p>
-      <ul style="list-style:none;padding:0;font-size:0.95em;">
-        <li><strong>Time:</strong> {{ item.timestamp }}</li>
-        <li><strong>Label:</strong> {{ item.label }}</li>
-        <li><strong>Confidence:</strong> {{ item.confidence if item.confidence is not none else "-" }}</li>
-        <li><strong>Input type:</strong> {{ item.input_type }}</li>
-        <li><strong>Status:</strong> {{ item.status }}</li>
-        <li><strong>Model version:</strong> {{ item.model_version }}</li>
-      </ul>
-      <h3>Text excerpt</h3>
-      <p style="white-space:pre-wrap;font-size:0.9em;">{{ item.text_excerpt }}</p>
-    </div>
-  </body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Prediction #{{ item.id }} — History detail{% endblock %}
+{% block description %}Stored details for prediction #{{ item.id }}.{% endblock %}
+
+{% block content %}
+<div class="card card--narrow">
+  <div class="card__header">
+    <h1>Prediction #{{ item.id }}</h1>
+    <p class="card__subtitle">Stored record from the local prediction history.</p>
+  </div>
+
+  <dl class="detail-list">
+    <dt>Time</dt>
+    <dd><time class="js-relative" datetime="{{ item.timestamp }}">{{ item.timestamp[:16].replace("T", " ") }} UTC</time></dd>
+
+    <dt>Label</dt>
+    <dd>
+      {% if item.label == 'Real News' %}
+        <span class="badge badge--real">Real News</span>
+      {% elif item.label == 'Fake News' %}
+        <span class="badge badge--fake">Fake News</span>
+      {% else %}
+        <span class="badge badge--muted">{{ item.label }}</span>
+      {% endif %}
+    </dd>
+
+    <dt>Confidence</dt>
+    <dd>{% if item.confidence is not none %}{{ "%.1f"|format(item.confidence * 100) }}%{% else %}—{% endif %}</dd>
+
+    <dt>Input type</dt>
+    <dd>{{ item.input_type }}</dd>
+
+    <dt>Status</dt>
+    <dd>{{ item.status }}</dd>
+
+    <dt>Model version</dt>
+    <dd>{{ item.model_version }}</dd>
+
+    <dt>Your feedback</dt>
+    <dd>
+      {% if item.feedback == 'helpful' %}
+        <span class="badge badge--real">👍 Helpful</span>
+      {% elif item.feedback == 'not_helpful' %}
+        <span class="badge badge--warn">👎 Not helpful</span>
+      {% else %}
+        <span class="muted">No feedback recorded</span>
+      {% endif %}
+    </dd>
+  </dl>
+
+  <h2>Article excerpt</h2>
+  <p class="excerpt-box">{{ item.text_excerpt }}</p>
+
+  <div class="btn-row">
+    <a class="btn btn--secondary" href="{{ url_for('main.history_page') }}">← Back to history</a>
+    <a class="btn btn--secondary" href="{{ url_for('main.home') }}">Check another article</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='history.js') }}" defer></script>
+{% endblock %}

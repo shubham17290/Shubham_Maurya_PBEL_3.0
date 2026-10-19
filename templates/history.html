@@ -1,75 +1,127 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Prediction History</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <div class="form-container" style="max-width:900px;">
-      <h2>📜 Prediction History</h2>
-      <p><a href="/">← Home</a> | <a href="/batch">Batch</a></p>
+{% extends "base.html" %}
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
+{% block title %}Prediction History{% endblock %}
+{% block description %}Browse past single and batch predictions with label, confidence, and timestamps.{% endblock %}
 
-      <form method="get" action="/history" style="margin-bottom:12px;">
-        <label for="label">Filter:</label>
-        <select name="label" id="label">
-          <option value="" {% if not label %}selected{% endif %}>All</option>
-          <option value="Real News" {% if label=="Real News" %}selected{% endif %}>Real News</option>
-          <option value="Fake News" {% if label=="Fake News" %}selected{% endif %}>Fake News</option>
-        </select>
-        <button type="submit" class="submit-btn" style="width:auto;padding:6px 12px;">Apply</button>
-      </form>
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <h1>Prediction History</h1>
+    <p class="card__subtitle">Newest first. Each row links to the stored details for that prediction.</p>
+  </div>
 
-      {% if items %}
-      <table style="width:100%;border-collapse:collapse;font-size:0.9em;">
-        <thead>
-          <tr>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">ID</th>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Time</th>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Label</th>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Confidence</th>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Type</th>
-            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Excerpt</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for it in items %}
-          <tr>
-            <td style="padding:6px;"><a href="/history/{{ it.id }}">{{ it.id }}</a></td>
-            <td style="padding:6px;">{{ it.timestamp }}</td>
-            <td style="padding:6px;">{{ it.label }}</td>
-            <td style="padding:6px;">{{ it.confidence if it.confidence is not none else "-" }}</td>
-            <td style="padding:6px;">{{ it.input_type }}</td>
-            <td style="padding:6px;">{{ (it.text_excerpt or "")[:60] }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <p style="margin-top:10px;font-size:0.85em;">Page {{ page }} of {{ pages }} ({{ total }} total)</p>
-      <div style="display:flex;gap:8px;">
-        {% if page > 1 %}<a href="/history?page={{ page-1 }}&label={{ label }}">Prev</a>{% endif %}
-        {% if page < pages %}<a href="/history?page={{ page+1 }}&label={{ label }}">Next</a>{% endif %}
-      </div>
-      {% else %}
-      <p>No history yet.</p>
-      {% endif %}
-
-      <form method="post" action="/history/clear" style="margin-top:16px;">
-        {% if csrf_token %}
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        {% endif %}
-        <button type="submit" class="submit-btn" style="width:auto;padding:6px 12px;background:#dc3545;">Clear history</button>
-      </form>
+  <form method="get" action="{{ url_for('main.history_page') }}" class="filter-bar" id="history-filter">
+    <div class="field">
+      <label for="label">Label</label>
+      <select name="label" id="label" data-auto-submit="true">
+        <option value="" {% if not label %}selected{% endif %}>All</option>
+        <option value="Real News" {% if label == "Real News" %}selected{% endif %}>Real News</option>
+        <option value="Fake News" {% if label == "Fake News" %}selected{% endif %}>Fake News</option>
+      </select>
     </div>
-  </body>
-</html>
+    <div class="field field--grow">
+      <label for="q">Search text</label>
+      <input type="search" name="q" id="q" value="{{ q }}" maxlength="100"
+             placeholder="Search in stored article excerpts…">
+    </div>
+    <button type="submit" class="btn btn--secondary">Apply filters</button>
+    {% if label or q %}
+    <a class="btn btn--secondary" href="{{ url_for('main.history_page') }}">Clear filters</a>
+    {% endif %}
+  </form>
+
+  {% if items %}
+  <div class="table-wrap">
+    <table class="data-table responsive-table">
+      <caption class="visually-hidden">Stored predictions, newest first</caption>
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Time</th>
+          <th scope="col">Label</th>
+          <th scope="col">Confidence</th>
+          <th scope="col">Type</th>
+          <th scope="col">Excerpt</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+        <tr>
+          <td data-label="ID">
+            <a href="{{ url_for('main.history_detail', pid=it.id) }}"
+               aria-label="View prediction {{ it.id }} details">#{{ it.id }}</a>
+          </td>
+          <td data-label="Time">
+            <time class="js-relative" datetime="{{ it.timestamp }}">{{ it.timestamp[:16].replace("T", " ") }} UTC</time>
+          </td>
+          <td data-label="Label">
+            {% if it.label == 'Real News' %}
+              <span class="badge badge--real">Real</span>
+            {% elif it.label == 'Fake News' %}
+              <span class="badge badge--fake">Fake</span>
+            {% else %}
+              <span class="badge badge--muted">{{ it.label }}</span>
+            {% endif %}
+          </td>
+          <td data-label="Confidence" class="num">
+            {% if it.confidence is not none %}{{ "%.1f"|format(it.confidence * 100) }}%{% else %}—{% endif %}
+          </td>
+          <td data-label="Type">{{ it.input_type }}</td>
+          <td data-label="Excerpt" class="cell-text">{{ (it.text_excerpt or "")[:90] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span class="muted">Page {{ page }} of {{ pages }} ({{ total }} total)</span>
+    <span class="pagination__links">
+      {% if page > 1 %}
+        <a class="btn btn--secondary btn--sm"
+           href="{{ url_for('main.history_page', page=page-1, label=(label or none), q=(q or none)) }}">← Newer</a>
+      {% endif %}
+      {% if page < pages %}
+        <a class="btn btn--secondary btn--sm"
+           href="{{ url_for('main.history_page', page=page+1, label=(label or none), q=(q or none)) }}">Older →</a>
+      {% endif %}
+    </span>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p class="empty-state__icon" aria-hidden="true">🗂️</p>
+    {% if label or q %}
+      <p>No predictions match your current filters.</p>
+      <a class="btn btn--secondary" href="{{ url_for('main.history_page') }}">Clear filters</a>
+    {% else %}
+      <p>No predictions have been saved yet. Single checks and batch uploads appear here.</p>
+      <div class="btn-row btn-row--center">
+        <a class="btn btn--primary" href="{{ url_for('main.home') }}">Check an article</a>
+        <a class="btn btn--secondary" href="{{ url_for('main.batch_form') }}">Run a batch</a>
+      </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('main.history_clear') }}" id="clear-form" class="form-actions">
+    {% if csrf_token %}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% endif %}
+    <input type="hidden" name="confirm" value="" id="clear-confirm">
+    <button type="submit" class="btn btn--danger" id="clear-btn">Clear history</button>
+  </form>
+</div>
+
+<dialog id="clear-dialog" class="confirm-dialog" aria-labelledby="clear-dialog-title">
+  <h2 id="clear-dialog-title">Clear all prediction history?</h2>
+  <p>This permanently removes every stored prediction. This action cannot be undone.</p>
+  <div class="btn-row">
+    <button type="button" class="btn btn--secondary" id="clear-cancel">Cancel</button>
+    <button type="button" class="btn btn--danger" id="clear-confirm-btn">Yes, clear all history</button>
+  </div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='history.js') }}" defer></script>
+{% endblock %}

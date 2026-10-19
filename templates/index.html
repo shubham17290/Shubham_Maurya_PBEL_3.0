@@ -1,49 +1,123 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Fake News Detection</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <div class="form-container">
-      <h2>📰 Fake News Detection System</h2>
-      <p style="text-align:center;font-size:0.9em;"><a href="/batch">Batch prediction (CSV/TXT)</a> | <a href="/history">History</a></p>
+{% extends "base.html" %}
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
+{% block title %}Fake News Detection — Check an article{% endblock %}
+{% block description %}Paste a news article and get a Real/Fake classification with confidence, class probability estimates, and the words that influenced the model.{% endblock %}
 
-      <form id="news-form" action="/predict" method="post" novalidate>
-        {% if csrf_token %}
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        {% endif %}
-        <label for="news_input">Enter News Article Text:</label>
-        <textarea
-          name="news_input"
-          id="news_input"
-          rows="8"
-          placeholder="Paste the news article here to check if it's real or fake..."
-          aria-describedby="char-count"
-          required
-        ></textarea>
-        <div id="char-count" class="char-count" aria-live="polite">0 / 50000 characters</div>
+{% block content %}
+<div class="card card--narrow">
+  <div class="card__header">
+    <h1>Fake News Detection</h1>
+    <p class="card__subtitle">
+      Paste a news article below. A machine-learning model trained on labeled news data
+      classifies it as <strong>Real News</strong> or <strong>Fake News</strong> and shows
+      which words influenced the result.
+    </p>
+  </div>
 
-        <button type="submit" id="submit-btn" class="submit-btn">
-          <span id="spinner" class="spinner hidden" aria-hidden="true"></span>
-          Check News
-        </button>
-      </form>
+  <form id="news-form" action="{{ url_for('main.predict') }}" method="post" novalidate>
+    {% if csrf_token %}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% endif %}
 
-      <div id="result" class="result" role="status" aria-live="polite">{% if prediction_text %}{{ prediction_text }}{% endif %}</div>
-      <div id="explanation" class="explanation"></div>
+    <div class="field">
+      <label for="news_input">News article text</label>
+      <textarea
+        name="news_input"
+        id="news_input"
+        rows="9"
+        placeholder="Paste the news article here to check if it reads as real or fake…"
+        aria-describedby="min-hint char-count"
+        required
+      ></textarea>
+      <div class="field__meta">
+        <span id="min-hint" class="hint">Minimum {{ min_length | default(50) }} characters — longer articles give more reliable results.</span>
+        <span id="char-count" class="char-count" aria-live="polite"
+              data-min="{{ min_length | default(50) }}" data-max="{{ max_length | default(50000) }}">0 / {{ "{:,}".format(max_length | default(50000)) }} characters</span>
+      </div>
     </div>
 
-    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
-  </body>
-</html>
+    <div class="btn-row">
+      <button type="submit" id="submit-btn" class="btn btn--primary">
+        <span id="spinner" class="spinner hidden" aria-hidden="true"></span>
+        <span id="submit-label">Check news</span>
+      </button>
+      <button type="button" id="example-btn" class="btn btn--secondary">Try an example article</button>
+    </div>
+  </form>
+
+  <p id="form-status" class="visually-hidden" role="status" aria-live="polite"></p>
+
+  <section id="result-card"
+           class="result-card{% if prediction_class %} {{ prediction_class }}{% endif %}"
+           aria-labelledby="result-heading"
+           {% if not prediction_text %}hidden{% endif %}>
+    <div class="result-card__top">
+      <div class="verdict">
+        <span class="verdict__icon" id="verdict-icon" aria-hidden="true">—</span>
+        <div>
+          <h2 class="verdict__title" id="result-heading" tabindex="-1">Prediction</h2>
+          <p class="verdict__caption" id="verdict-caption">Model verdict for the submitted article</p>
+        </div>
+      </div>
+
+      <div class="confidence-block" id="confidence-block">
+        <div class="confidence-block__label">
+          <span>Model confidence</span>
+          <span class="confidence-block__value" id="confidence-value">—</span>
+        </div>
+        <div class="meter" role="img" id="confidence-meter" aria-label="Model confidence">
+          <div class="meter__fill" id="confidence-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    {% if prediction_text %}
+    <p class="result-fallback" id="result-fallback">{{ prediction_text }}</p>
+    {% endif %}
+
+    <div class="note-banner note-banner--warning" id="low-confidence-note" hidden>
+      <span aria-hidden="true">⚠️</span>
+      <span>Low confidence: the model is close to its decision boundary for this article. Treat the result as uncertain.</span>
+    </div>
+
+    <div class="class-probs" id="probabilities" hidden>
+      <p class="class-probs__title" id="probabilities-title">Model probability estimate per class</p>
+      <div id="prob-rows"></div>
+    </div>
+
+    <section class="explanation" id="explanation" hidden aria-labelledby="explanation-title">
+      <h3 class="explanation__title" id="explanation-title">Why this prediction?</h3>
+      <p class="explanation__intro">
+        The model is a logistic regression over TF-IDF features. The words below contributed the most
+        to the decision. Feature contributions describe model behavior — they are not proof that any
+        claim in the article is true or false.
+      </p>
+
+      <div class="exp-group exp-group--support">
+        <h4 class="exp-group__title"><span class="dot" aria-hidden="true"></span> Pushed toward Real News</h4>
+        <ul class="chips" id="exp-supporting"></ul>
+      </div>
+
+      <div class="exp-group exp-group--oppose">
+        <h4 class="exp-group__title"><span class="dot" aria-hidden="true"></span> Pushed toward Fake News</h4>
+        <ul class="chips" id="exp-opposing"></ul>
+      </div>
+
+      <p class="exp-note" id="exp-note"></p>
+    </section>
+
+    <section class="feedback" id="feedback" hidden aria-labelledby="feedback-question">
+      <p class="feedback__question" id="feedback-question">Was this prediction helpful?</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn--secondary btn--sm" data-feedback="helpful">👍 Helpful</button>
+        <button type="button" class="btn btn--secondary btn--sm" data-feedback="not_helpful">👎 Not helpful</button>
+      </div>
+      <p class="feedback__status" id="feedback-status" role="status" aria-live="polite"></p>
+    </section>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+{% endblock %}

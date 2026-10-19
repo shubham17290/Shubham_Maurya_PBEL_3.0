@@ -8,6 +8,10 @@ from typing import List, Dict, Optional
 
 from config import BASE_DIR
 
+# Feedback values accepted from the UI. Stored separately from the model label;
+# user feedback is an opinion signal, never treated as verified ground truth.
+FEEDBACK_VALUES = ("helpful", "not_helpful")
+
 
 def _db_path() -> Path:
     p = os.environ.get("HISTORY_DB_PATH") or "history.db"
@@ -21,6 +25,17 @@ def _connect() -> sqlite3.Connection:
     conn = sqlite3.connect(str(_db_path()))
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def _ensure_feedback_column(conn: sqlite3.Connection) -> None:
+    """Add the feedback column to pre-existing databases (safe migration).
+
+    Older databases were created before per-prediction feedback existed; the
+    column is only added when missing, so this is idempotent and non-destructive.
+    """
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(predictions)").fetchall()}
+    if "feedback" not in cols:
+        conn.execute("ALTER TABLE predictions ADD COLUMN feedback TEXT")
 
 
 def init_db() -> None:
@@ -40,6 +55,7 @@ def init_db() -> None:
             )
             """
         )
+        _ensure_feedback_column(conn)
         conn.commit()
         conn.close()
     except Exception:
@@ -124,20 +140,37 @@ def save_batch(results: List[Dict], input_type: str = "batch") -> None:
         pass
 
 
-def list_predictions(limit: int = 20, offset: int = 0, label: Optional[str] = None) -> List[Dict]:
+def _like_pattern(term: str) -> str:
+    """Build a parameterized LIKE pattern with wildcards escaped.
+
+    ``\\`` is used as the ESCAPE character in the generated query.
+    """
+    escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
+def list_predictions(
+    limit: int = 20,
+    offset: int = 0,
+    label: Optional[str] = None,
+    search: Optional[str] = None,
+) -> List[Dict]:
     try:
         init_db()
         conn = _connect()
+        where = []
+        params: list = []
         if label:
-            cur = conn.execute(
-                "SELECT * FROM predictions WHERE label = ? ORDER BY id DESC LIMIT ? OFFSET ?",
-                (label, limit, offset),
-            )
-        else:
-            cur = conn.execute(
-                "SELECT * FROM predictions ORDER BY id DESC LIMIT ? OFFSET ?",
-                (limit, offset),
-            )
+            where.append("label = ?")
+            params.append(label)
+        if search:
+            where.append("text_excerpt LIKE ? ESCAPE '\\'")
+            params.append(_like_pattern(search))
+        clause = f" WHERE {' AND '.join(where)}" if where else ""
+        cur = conn.execute(
+            f"SELECT * FROM predictions{clause} ORDER BY id DESC LIMIT ? OFFSET ?",
+            (*params, limit, offset),
+        )
         rows = [dict(r) for r in cur.fetchall()]
         conn.close()
         return rows
@@ -145,14 +178,20 @@ def list_predictions(limit: int = 20, offset: int = 0, label: Optional[str] = No
         return []
 
 
-def count_predictions(label: Optional[str] = None) -> int:
+def count_predictions(label: Optional[str] = None, search: Optional[str] = None) -> int:
     try:
         init_db()
         conn = _connect()
+        where = []
+        params: list = []
         if label:
-            cur = conn.execute("SELECT COUNT(*) FROM predictions WHERE label = ?", (label,))
-        else:
-            cur = conn.execute("SELECT COUNT(*) FROM predictions")
+            where.append("label = ?")
+            params.append(label)
+        if search:
+            where.append("text_excerpt LIKE ? ESCAPE '\\'")
+            params.append(_like_pattern(search))
+        clause = f" WHERE {' AND '.join(where)}" if where else ""
+        cur = conn.execute(f"SELECT COUNT(*) FROM predictions{clause}", params)
         n = cur.fetchone()[0]
         conn.close()
         return int(n)
@@ -170,6 +209,34 @@ def get_prediction(pid: int) -> Optional[Dict]:
         return dict(row) if row else None
     except Exception:
         return None
+
+
+def set_feedback(pid: int, feedback: str) -> str:
+    """Record first feedback for a prediction.
+
+    Policy (documented for the UI): the first submitted feedback for a
+    prediction is kept; later submissions never overwrite it. Returns one of
+    ``"set"``, ``"already_set"`` or ``"not_found"``.
+    """
+    if feedback not in FEEDBACK_VALUES:
+        return "invalid"
+    try:
+        init_db()
+        conn = _connect()
+        cur = conn.execute(
+            "UPDATE predictions SET feedback = ? WHERE id = ? AND feedback IS NULL",
+            (feedback, pid),
+        )
+        if cur.rowcount == 1:
+            conn.commit()
+            conn.close()
+            return "set"
+        # Nothing updated: either the row does not exist or feedback already stored.
+        exists = conn.execute("SELECT 1 FROM predictions WHERE id = ?", (pid,)).fetchone()
+        conn.close()
+        return "already_set" if exists else "not_found"
+    except Exception:
+        return "not_found"
 
 
 def clear_all() -> bool:
