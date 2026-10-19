@@ -8,6 +8,7 @@ from typing import Optional
 
 from utils.prediction import ModelPredictor
 from utils.validation import validate_news_text
+from utils.rate_limit import limiter
 
 # Create blueprint
 main_bp = Blueprint('main', __name__)
@@ -50,6 +51,7 @@ def health():
 
 
 @main_bp.route('/predict', methods=['POST'])
+@limiter.limit("10 per minute")
 def predict():
     """
     Handle prediction requests from the form.

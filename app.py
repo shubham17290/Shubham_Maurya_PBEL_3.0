@@ -13,6 +13,7 @@ from flask import Flask, render_template, flash
 
 from config import BASE_DIR, get_config
 from utils.prediction import ModelPredictor
+from utils.rate_limit import limiter
 
 
 def _resolve_path(value: str) -> Path:
@@ -45,6 +46,9 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     # Initialize logging
     initialize_logging(app)
 
+    # Initialize security extensions (headers + rate limiting)
+    initialize_security(app)
+
     # Initialize extensions and components
     initialize_components(app)
 
@@ -74,6 +78,28 @@ def initialize_logging(app: Flask) -> None:
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
     app.logger.info("Logging initialized")
+
+
+def initialize_security(app: Flask) -> None:
+    """Configure security headers and rate limiting."""
+    try:
+        from flask_talisman import Talisman
+
+        Talisman(
+            app,
+            force_https=not (app.debug or app.testing),
+            strict_transport_security=not (app.debug or app.testing),
+            content_security_policy={
+                "default-src": "'self'",
+                "style-src": ["'self'", "'unsafe-inline'"],
+                "img-src": ["'self'", "data:"],
+            },
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        app.logger.warning(f"Talisman not enabled: {exc}")
+
+    limiter.init_app(app)
+    app.logger.info("Security extensions initialized")
 
 
 def initialize_components(app: Flask) -> None:

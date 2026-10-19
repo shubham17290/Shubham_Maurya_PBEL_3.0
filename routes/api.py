@@ -8,6 +8,7 @@ from typing import Dict, Tuple
 import logging
 
 from utils.prediction import ModelPredictor
+from utils.rate_limit import limiter
 
 # Create blueprint
 api_bp = Blueprint('api', __name__)
@@ -31,6 +32,7 @@ def init_api_routes(predictor_instance: ModelPredictor) -> None:
 
 
 @api_bp.route('/predict', methods=['POST'])
+@limiter.limit("20 per minute")
 def api_predict():
     """
     API endpoint for prediction.
