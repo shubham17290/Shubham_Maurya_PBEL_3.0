@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prediction #{{ item.id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="form-container">
+      <h2>Prediction #{{ item.id }}</h2>
+      <p><a href="/history">← Back to history</a></p>
+      <ul style="list-style:none;padding:0;font-size:0.95em;">
+        <li><strong>Time:</strong> {{ item.timestamp }}</li>
+        <li><strong>Label:</strong> {{ item.label }}</li>
+        <li><strong>Confidence:</strong> {{ item.confidence if item.confidence is not none else "-" }}</li>
+        <li><strong>Input type:</strong> {{ item.input_type }}</li>
+        <li><strong>Status:</strong> {{ item.status }}</li>
+        <li><strong>Model version:</strong> {{ item.model_version }}</li>
+      </ul>
+      <h3>Text excerpt</h3>
+      <p style="white-space:pre-wrap;font-size:0.9em;">{{ item.text_excerpt }}</p>
+    </div>
+  </body>
+</html>

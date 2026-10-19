@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prediction History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="form-container" style="max-width:900px;">
+      <h2>📜 Prediction History</h2>
+      <p><a href="/">← Home</a> | <a href="/batch">Batch</a></p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="get" action="/history" style="margin-bottom:12px;">
+        <label for="label">Filter:</label>
+        <select name="label" id="label">
+          <option value="" {% if not label %}selected{% endif %}>All</option>
+          <option value="Real News" {% if label=="Real News" %}selected{% endif %}>Real News</option>
+          <option value="Fake News" {% if label=="Fake News" %}selected{% endif %}>Fake News</option>
+        </select>
+        <button type="submit" class="submit-btn" style="width:auto;padding:6px 12px;">Apply</button>
+      </form>
+
+      {% if items %}
+      <table style="width:100%;border-collapse:collapse;font-size:0.9em;">
+        <thead>
+          <tr>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">ID</th>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Time</th>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Label</th>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Confidence</th>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Type</th>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Excerpt</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in items %}
+          <tr>
+            <td style="padding:6px;"><a href="/history/{{ it.id }}">{{ it.id }}</a></td>
+            <td style="padding:6px;">{{ it.timestamp }}</td>
+            <td style="padding:6px;">{{ it.label }}</td>
+            <td style="padding:6px;">{{ it.confidence if it.confidence is not none else "-" }}</td>
+            <td style="padding:6px;">{{ it.input_type }}</td>
+            <td style="padding:6px;">{{ (it.text_excerpt or "")[:60] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <p style="margin-top:10px;font-size:0.85em;">Page {{ page }} of {{ pages }} ({{ total }} total)</p>
+      <div style="display:flex;gap:8px;">
+        {% if page > 1 %}<a href="/history?page={{ page-1 }}&label={{ label }}">Prev</a>{% endif %}
+        {% if page < pages %}<a href="/history?page={{ page+1 }}&label={{ label }}">Next</a>{% endif %}
+      </div>
+      {% else %}
+      <p>No history yet.</p>
+      {% endif %}
+
+      <form method="post" action="/history/clear" style="margin-top:16px;">
+        {% if csrf_token %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        {% endif %}
+        <button type="submit" class="submit-btn" style="width:auto;padding:6px 12px;background:#dc3545;">Clear history</button>
+      </form>
+    </div>
+  </body>
+</html>

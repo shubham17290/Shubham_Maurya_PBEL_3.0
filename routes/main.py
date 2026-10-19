@@ -3,7 +3,7 @@ Main routes for Fake News Detection Application.
 Handles web page routes.
 """
 
-from flask import Blueprint, render_template, flash, request, current_app, session
+from flask import Blueprint, render_template, flash, request, current_app, session, redirect, url_for
 import secrets
 from typing import Optional
 
@@ -12,6 +12,7 @@ from utils.validation import validate_news_text
 from utils.rate_limit import limiter
 from utils.model_loader import get_predictor
 from utils.batch import parse_csv_bytes, parse_txt_bytes, process_articles, results_to_csv
+from utils.history import save_prediction, save_batch, list_predictions, count_predictions, get_prediction, clear_all
 
 # Create blueprint
 main_bp = Blueprint('main', __name__)
@@ -88,6 +89,7 @@ def predict():
             return render_template('index.html')
 
         current_app.logger.info(f'Prediction: {result} (confidence: {confidence:.2%})')
+        save_prediction(result, confidence, "single", news_text, "ok")
         prediction_text = f'Prediction: {result} (Confidence: {confidence:.2%})'
         return render_template('index.html', prediction_text=prediction_text)
 
@@ -99,6 +101,60 @@ def predict():
 
 def validate_input(text: str) -> Optional[str]:
     return validate_news_text(text)
+
+
+@main_bp.route("/history", methods=["GET"])
+def history_page():
+    label = request.args.get("label")
+    if label not in ("Real News", "Fake News", None, ""):
+        label = None
+    if label == "":
+        label = None
+    page = max(1, int(request.args.get("page", 1)))
+    per_page = 20
+    offset = (page - 1) * per_page
+    items = list_predictions(limit=per_page, offset=offset, label=label)
+    total = count_predictions(label)
+    pages = (total + per_page - 1) // per_page if total else 1
+    csrf_token = None
+    if current_app.config.get("CSRF_ENABLED", True):
+        csrf_token = session.get("csrf_token")
+        if not csrf_token:
+            csrf_token = secrets.token_urlsafe(32)
+            session["csrf_token"] = csrf_token
+    return render_template(
+        "history.html",
+        items=items,
+        page=page,
+        pages=pages,
+        total=total,
+        label=label or "",
+        csrf_token=csrf_token,
+    )
+
+
+@main_bp.route("/history/<int:pid>", methods=["GET"])
+def history_detail(pid):
+    item = get_prediction(pid)
+    if not item:
+        flash("Prediction not found.", "warning")
+        return render_template("history.html", items=[], page=1, pages=1, total=0, label="")
+    return render_template("history_detail.html", item=item)
+
+
+@main_bp.route("/history/clear", methods=["POST"])
+def history_clear():
+    if current_app.config.get("CSRF_ENABLED", True):
+        token = request.form.get("csrf_token")
+        if not token or token != session.get("csrf_token"):
+            flash("Invalid or missing CSRF token.", "danger")
+            return render_template("history.html", items=[], page=1, pages=1, total=0, label="")
+    ok = clear_all()
+    if ok:
+        flash("History cleared.", "success")
+    else:
+        flash("Could not clear history.", "danger")
+    return redirect(url_for("main.history_page"))
 
 
 @main_bp.route("/batch", methods=["GET"])
@@ -176,6 +232,8 @@ def batch_process():
     import base64
     session["batch_csv"] = base64.b64encode(csv_bytes).decode("ascii")
     session["batch_filename"] = "predictions.csv"
+
+    save_batch(results, "batch")
 
     ok = sum(1 for r in results if r["status"] == "ok")
     failed = len(results) - ok

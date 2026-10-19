@@ -40,6 +40,10 @@ class Config:
     BATCH_MAX_FILE_SIZE = int(os.environ.get("BATCH_MAX_FILE_SIZE", 5 * 1024 * 1024))
     BATCH_MAX_ROWS = int(os.environ.get("BATCH_MAX_ROWS", 1000))
 
+    # Prediction history (SQLite)
+    HISTORY_DB_PATH = os.environ.get("HISTORY_DB_PATH", "history.db")
+    HISTORY_EXCERPT_LENGTH = int(os.environ.get("HISTORY_EXCERPT_LENGTH", 300))
+
     # Server settings
     HOST = os.environ.get("HOST", "0.0.0.0")
     PORT = int(os.environ.get("PORT", 5000))

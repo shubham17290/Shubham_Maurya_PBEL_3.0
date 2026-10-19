@@ -96,6 +96,9 @@ dev/
 .venv/
 myenv/
 
+# Prediction history database
+history.db
+
 # Model files (DO NOT IGNORE - required for deployment)
 # *.pkl
 # *.joblib
