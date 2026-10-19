@@ -119,6 +119,14 @@ def api_predict():
             except Exception:
                 probabilities = None
 
+        # Explainability (best-effort)
+        explanation = None
+        if hasattr(model, "explain"):
+            try:
+                explanation = model.explain(text, top_k=5)
+            except Exception:
+                explanation = None
+
         # Log successful prediction
         logger.info(f'API prediction: {result} (confidence: {confidence:.2%})')
 
@@ -133,6 +141,8 @@ def api_predict():
         }
         if probabilities is not None:
             payload['probabilities'] = probabilities
+        if explanation is not None:
+            payload['explanation'] = explanation
         return jsonify(payload), 200
 
     except Exception as e:

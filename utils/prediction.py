@@ -238,4 +238,34 @@ class ModelPredictor:
             mapping[label] = float(p)
         return mapping
 
+    def explain(self, text: str, top_k: int = 5):
+        if not self.is_loaded():
+            raise RuntimeError("Models not loaded. Call load_models() before making predictions.")
+        cleaned_text = self.preprocessor.clean_text(text)
+        if not cleaned_text or len(cleaned_text.strip()) == 0:
+            raise ValueError("Input text contains no valid content after preprocessing")
+
+        vectorized = self.vectorizer.transform([cleaned_text])
+        # dense contributions
+        vec = vectorized.toarray().reshape(-1)
+        coef = self.model.coef_.reshape(-1)
+        contrib = coef * vec
+
+        # map feature index -> name
+        feature_names = self.vectorizer.get_feature_names_out()
+        features = []
+        for idx, c in enumerate(contrib):
+            if c == 0:
+                continue
+            features.append({"feature": str(feature_names[idx]), "contribution": float(c)})
+
+        supporting = sorted([f for f in features if f["contribution"] > 0], key=lambda x: x["contribution"], reverse=True)[:top_k]
+        opposing = sorted([f for f in features if f["contribution"] < 0], key=lambda x: x["contribution"])[:top_k]
+
+        return {
+            "supporting": supporting,
+            "opposing": opposing,
+            "note": "Contributions are (TF-IDF value x model weight). Positive supports 'Real News'; negative supports 'Fake News'. Approximate linear explanation.",
+        }
+
 

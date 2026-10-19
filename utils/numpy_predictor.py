@@ -130,3 +130,32 @@ class NumpyPredictor:
         decision = float((self.coef @ vec).reshape(-1)[0]) + float(self.intercept.item())
         proba1 = 1.0 / (1.0 + math.exp(-decision))
         return {"Fake News": float(1.0 - proba1), "Real News": float(proba1)}
+
+    def explain(self, text: str, top_k: int = 5):
+        cleaned = TextPreprocessor.clean_text(text)
+        if not cleaned.strip():
+            raise ValueError("Input text contains no valid content after preprocessing")
+
+        vec = self._build_vector(text)
+        contrib = (self.coef.reshape(-1) * vec)
+        if not hasattr(self, "_idx_to_token"):
+            self._idx_to_token = {v: k for k, v in self.vocabulary.items()}
+
+        features = []
+        for idx in range(len(contrib)):
+            c = float(contrib[idx])
+            if c == 0:
+                continue
+            token = self._idx_to_token.get(idx)
+            if token is None:
+                continue
+            features.append({"feature": token, "contribution": c})
+
+        supporting = sorted([f for f in features if f["contribution"] > 0], key=lambda x: x["contribution"], reverse=True)[:top_k]
+        opposing = sorted([f for f in features if f["contribution"] < 0], key=lambda x: x["contribution"])[:top_k]
+
+        return {
+            "supporting": supporting,
+            "opposing": opposing,
+            "note": "Contributions are (TF-IDF value x model weight). Positive supports 'Real News'; negative supports 'Fake News'. Approximate linear explanation.",
+        }

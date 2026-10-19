@@ -49,6 +49,7 @@
           var msg = r.data.prediction + " (" + pct + "% confidence)";
           if (r.data.low_confidence) msg += " - low confidence";
           showResult(msg, cls);
+          renderExplanation(r.data.explanation);
         })
         .catch(function () {
           setLoading(false);
@@ -67,5 +68,43 @@
     result.textContent = message;
     result.className = "result result-" + kind;
     result.setAttribute("aria-live", "polite");
+  }
+
+  function renderExplanation(exp) {
+    var box = document.getElementById("explanation");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!exp) return;
+    var h = document.createElement("h3");
+    h.textContent = "Why this prediction?";
+    box.appendChild(h);
+
+    function makeList(title, items) {
+      var p = document.createElement("p");
+      p.textContent = title;
+      p.className = "exp-title";
+      box.appendChild(p);
+      var ul = document.createElement("ul");
+      ul.className = "exp-list";
+      (items || []).forEach(function (it) {
+        var li = document.createElement("li");
+        li.textContent = it.feature + " (" + it.contribution.toFixed(4) + ")";
+        ul.appendChild(li);
+      });
+      if (!items || !items.length) {
+        var li = document.createElement("li");
+        li.textContent = "None";
+        ul.appendChild(li);
+      }
+      box.appendChild(ul);
+    }
+
+    makeList("Supporting this class:", exp.supporting);
+    makeList("Opposing this class:", exp.opposing);
+
+    var note = document.createElement("p");
+    note.className = "exp-note";
+    note.textContent = exp.note || "";
+    box.appendChild(note);
   }
 })();
