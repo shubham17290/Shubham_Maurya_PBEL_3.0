@@ -25,6 +25,9 @@ class Config:
     MODEL_PATH = os.environ.get("MODEL_PATH", "model/model.pkl")
     VECTORIZER_PATH = os.environ.get("VECTORIZER_PATH", "model/vectorizer.pkl")
 
+    # Inference backend: "numpy" (no scikit-learn at runtime) or "sklearn"
+    INFERENCE_BACKEND = os.environ.get("INFERENCE_BACKEND", "numpy").lower()
+
     # Logging
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -41,6 +44,9 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False
+
+    # CSRF protection for form submissions
+    CSRF_ENABLED = os.environ.get("CSRF_ENABLED", "true").lower() in ("1", "true", "yes")
 
 
 class DevelopmentConfig(Config):
@@ -68,6 +74,7 @@ class TestingConfig(Config):
     SECRET_KEY = os.environ.get("SECRET_KEY", "test-secret-key")
     # Disable CSRF/secure cookies conveniences for tests
     SESSION_COOKIE_SECURE = False
+    CSRF_ENABLED = False
 
 
 # Configuration dictionary

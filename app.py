@@ -49,6 +49,9 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     # Initialize security extensions (headers + rate limiting)
     initialize_security(app)
 
+    # Initialize observability (request ids + metrics)
+    initialize_observability(app)
+
     # Initialize extensions and components
     initialize_components(app)
 
@@ -80,6 +83,44 @@ def initialize_logging(app: Flask) -> None:
     app.logger.info("Logging initialized")
 
 
+def initialize_observability(app: Flask) -> None:
+    import time
+    import uuid
+    from utils.metrics import inc, observe
+
+    @app.before_request
+    def _start_timer():
+        from flask import g, request
+
+        g.start_time = time.time()
+        g.request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+
+    @app.after_request
+    def _record_metrics(response):
+        from flask import g, request
+
+        rid = getattr(g, "request_id", None)
+        if rid:
+            response.headers["X-Request-ID"] = rid
+
+        # Skip metrics bookkeeping for the metrics endpoint itself
+        if request.path != "/metrics":
+            inc("requests_total")
+            inc(f"status_{response.status_code}")
+            if hasattr(g, "start_time"):
+                observe("request_latency_seconds", time.time() - g.start_time)
+        return response
+
+    @app.route("/metrics", methods=["GET"])
+    def metrics():
+        from flask import jsonify
+        from utils.metrics import snapshot
+
+        return jsonify(snapshot()), 200
+
+    app.logger.info("Observability initialized")
+
+
 def initialize_security(app: Flask) -> None:
     """Configure security headers and rate limiting."""
     try:
@@ -103,43 +144,24 @@ def initialize_security(app: Flask) -> None:
 
 
 def initialize_components(app: Flask) -> None:
-    try:
-        app.logger.info("Initializing application components...")
+    app.logger.info("Initializing application components...")
 
-        # Load ML model using paths from configuration
-        predictor = ModelPredictor.get_instance(
-            model_path=app.config["MODEL_PATH"],
-            vectorizer_path=app.config["VECTORIZER_PATH"],
-        )
-        predictor.load_models()
+    # Model is loaded lazily on first request to keep cold starts fast and
+    # allow the app to boot even if the model files are temporarily missing.
+    predictor = None
+    app.predictor = predictor
 
-        # Store predictor in app context
-        app.predictor = predictor
+    # Initialize routes (predictor will be resolved lazily)
+    from routes.main import init_routes
 
-        # Initialize routes with predictor
-        from routes.main import init_routes
+    init_routes(predictor)
 
-        init_routes(predictor)
+    # Initialize API routes (predictor will be resolved lazily)
+    from routes.api import init_api_routes
 
-        # Initialize API routes with predictor
-        from routes.api import init_api_routes
+    init_api_routes(predictor)
 
-        init_api_routes(predictor)
-
-        app.logger.info("Application components initialized successfully")
-        app.logger.info("ML models loaded and ready")
-
-    except FileNotFoundError as e:
-        app.logger.critical(f"Failed to initialize: Model files not found - {e}")
-        app.logger.critical(
-            "Please ensure model/model.pkl and model/vectorizer.pkl exist"
-        )
-        raise RuntimeError("Model files not found") from e
-
-    except Exception as e:
-        app.logger.critical(f"Failed to initialize application: {e}")
-        app.logger.critical("Application cannot start without ML models")
-        raise RuntimeError("Failed to initialize application") from e
+    app.logger.info("Application components initialized (model will load lazily)")
 
 
 def register_blueprints(app: Flask) -> None:

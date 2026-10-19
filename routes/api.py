@@ -9,6 +9,7 @@ import logging
 
 from utils.prediction import ModelPredictor
 from utils.rate_limit import limiter
+from utils.model_loader import get_predictor
 
 # Create blueprint
 api_bp = Blueprint('api', __name__)
@@ -60,8 +61,9 @@ def api_predict():
         }
     """
     try:
-        # Validate predictor is loaded
-        if predictor is None or not predictor.is_loaded():
+        # Lazily resolve predictor
+        model = get_predictor()
+        if model is None or not model.is_loaded():
             logger.error('API prediction attempted but model not loaded')
             return jsonify({
                 'success': False,
@@ -94,7 +96,7 @@ def api_predict():
 
         # Make prediction
         try:
-            result, confidence = predictor.predict(text)
+            result, confidence = model.predict(text)
         except ValueError as e:
             logger.warning(f'Invalid input for API prediction: {e}')
             return jsonify({
@@ -108,17 +110,30 @@ def api_predict():
                 'error': 'Prediction failed. Please try again.'
             }), 500
 
+        # Per-class probabilities (best-effort)
+        probabilities = None
+        low_confidence = confidence < 0.6
+        if hasattr(model, "predict_proba"):
+            try:
+                probabilities = model.predict_proba(text)
+            except Exception:
+                probabilities = None
+
         # Log successful prediction
         logger.info(f'API prediction: {result} (confidence: {confidence:.2%})')
 
         # Return success response
-        return jsonify({
+        payload = {
             'success': True,
             'prediction': result,
             'confidence': confidence,
             'confidence_percentage': f'{confidence:.2%}',
+            'low_confidence': low_confidence,
             'text_length': len(text)
-        }), 200
+        }
+        if probabilities is not None:
+            payload['probabilities'] = probabilities
+        return jsonify(payload), 200
 
     except Exception as e:
         logger.error(f'Unexpected error in API predict: {e}', exc_info=True)
@@ -137,7 +152,8 @@ def api_health():
         JSON response with health status
     """
     try:
-        is_healthy = predictor is not None and predictor.is_loaded()
+        model = get_predictor()
+        is_healthy = model is not None and model.is_loaded()
 
         return jsonify({
             'status': 'healthy' if is_healthy else 'unhealthy',

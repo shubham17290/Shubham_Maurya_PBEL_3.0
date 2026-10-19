@@ -10,31 +10,38 @@
     <div class="form-container">
       <h2>📰 Fake News Detection System</h2>
 
-      <!-- Flash messages -->
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
+            <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
           {% endfor %}
         {% endif %}
       {% endwith %}
 
-      <form action="/predict" method="post">
+      <form id="news-form" action="/predict" method="post" novalidate>
+        {% if csrf_token %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        {% endif %}
         <label for="news_input">Enter News Article Text:</label>
         <textarea
           name="news_input"
           id="news_input"
           rows="8"
           placeholder="Paste the news article here to check if it's real or fake..."
+          aria-describedby="char-count"
           required
         ></textarea>
+        <div id="char-count" class="char-count" aria-live="polite">0 / 50000 characters</div>
 
-        <input type="submit" value="Check News" />
+        <button type="submit" id="submit-btn" class="submit-btn">
+          <span id="spinner" class="spinner hidden" aria-hidden="true"></span>
+          Check News
+        </button>
       </form>
 
-      {% if prediction_text %}
-      <div class="result">{{ prediction_text }}</div>
-      {% endif %}
+      <div id="result" class="result" role="status" aria-live="polite">{% if prediction_text %}{{ prediction_text }}{% endif %}</div>
     </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
   </body>
 </html>
