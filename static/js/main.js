@@ -46,7 +46,9 @@
           }
           var pct = Math.round(r.data.confidence * 100);
           var cls = r.data.prediction === "Real News" ? "real" : "fake";
-          showResult(r.data.prediction + " (" + pct + "% confidence)", cls);
+          var msg = r.data.prediction + " (" + pct + "% confidence)";
+          if (r.data.low_confidence) msg += " - low confidence";
+          showResult(msg, cls);
         })
         .catch(function () {
           setLoading(false);

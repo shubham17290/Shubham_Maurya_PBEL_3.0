@@ -4,6 +4,7 @@ Contains text preprocessing and model prediction functions.
 """
 
 import re
+import math
 import pickle
 import logging
 from typing import Tuple, Optional
@@ -208,5 +209,33 @@ class ModelPredictor:
         except Exception as e:
             logger.error(f"Error during prediction: {e}")
             raise RuntimeError(f"Prediction failed: {str(e)}") from e
+
+    def predict_proba(self, text: str):
+        """Return per-class probabilities for the given text."""
+        if not self.is_loaded():
+            raise RuntimeError("Models not loaded. Call load_models() before making predictions.")
+        if not text or not isinstance(text, str):
+            raise ValueError("Input text must be a non-empty string")
+
+        cleaned_text = self.preprocessor.clean_text(text)
+        if not cleaned_text or len(cleaned_text.strip()) == 0:
+            raise ValueError("Input text contains no valid content after preprocessing")
+
+        vectorized_text = self.vectorizer.transform([cleaned_text])
+        if hasattr(self.model, "predict_proba"):
+            proba = self.model.predict_proba(vectorized_text)[0]
+            classes = list(self.model.classes_)
+        else:
+            # Fallback: synthesize from decision function
+            decision = float(self.model.decision_function(vectorized_text)[0])
+            p1 = 1.0 / (1.0 + math.exp(-decision))
+            proba = [1 - p1, p1]
+            classes = [0, 1]
+
+        mapping = {}
+        for cls, p in zip(classes, proba):
+            label = "Real News" if cls == 1 else "Fake News"
+            mapping[label] = float(p)
+        return mapping
 
 

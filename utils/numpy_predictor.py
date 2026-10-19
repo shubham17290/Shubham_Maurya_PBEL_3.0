@@ -116,8 +116,17 @@ class NumpyPredictor:
             raise ValueError("Input text contains no valid content after preprocessing")
 
         vec = self._build_vector(text)
-        decision = float(self.coef @ vec) + float(self.intercept.item())
+        decision = float((self.coef @ vec).reshape(-1)[0]) + float(self.intercept.item())
         proba1 = 1.0 / (1.0 + math.exp(-decision))
         result = LABEL_REAL if proba1 >= 0.5 else LABEL_FAKE
         confidence = float(max(proba1, 1.0 - proba1))
         return result, confidence
+
+    def predict_proba(self, text: str):
+        cleaned = TextPreprocessor.clean_text(text)
+        if not cleaned.strip():
+            raise ValueError("Input text contains no valid content after preprocessing")
+        vec = self._build_vector(text)
+        decision = float((self.coef @ vec).reshape(-1)[0]) + float(self.intercept.item())
+        proba1 = 1.0 / (1.0 + math.exp(-decision))
+        return {"Fake News": float(1.0 - proba1), "Real News": float(proba1)}

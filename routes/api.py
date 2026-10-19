@@ -110,17 +110,30 @@ def api_predict():
                 'error': 'Prediction failed. Please try again.'
             }), 500
 
+        # Per-class probabilities (best-effort)
+        probabilities = None
+        low_confidence = confidence < 0.6
+        if hasattr(model, "predict_proba"):
+            try:
+                probabilities = model.predict_proba(text)
+            except Exception:
+                probabilities = None
+
         # Log successful prediction
         logger.info(f'API prediction: {result} (confidence: {confidence:.2%})')
 
         # Return success response
-        return jsonify({
+        payload = {
             'success': True,
             'prediction': result,
             'confidence': confidence,
             'confidence_percentage': f'{confidence:.2%}',
+            'low_confidence': low_confidence,
             'text_length': len(text)
-        }), 200
+        }
+        if probabilities is not None:
+            payload['probabilities'] = probabilities
+        return jsonify(payload), 200
 
     except Exception as e:
         logger.error(f'Unexpected error in API predict: {e}', exc_info=True)
