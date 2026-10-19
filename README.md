@@ -810,7 +810,9 @@ Positive contributions support "Real News"; negative support "Fake News".
 ## Batch Prediction
 Upload a CSV (with a text/article/content/news/body column) or TXT (one article per line or blank-line separated).
 - Max file size: 5 MB (configurable via BATCH_MAX_FILE_SIZE).
+- Effective request limit: 6 MB (MAX_CONTENT_LENGTH) to allow multipart overhead.
 - Max 1000 articles per batch (configurable via BATCH_MAX_ROWS).
+- CSV cells are sanitized to prevent spreadsheet formula injection.
 - Download results as CSV with row_id, text (truncated to 500 chars), prediction, confidence, status.
 
 ## Prediction History

@@ -68,6 +68,25 @@ def process_articles(articles, predictor, min_length: int, max_length: int) -> L
     return results
 
 
+DANGEROUS_PREFIXES = ("=", "+", "-", "@")
+
+
+def sanitize_csv_cell(value) -> str:
+    """Neutralize spreadsheet formula injection in a text cell.
+
+    Cells whose first non-whitespace/control character is a formula trigger
+    are prefixed with an apostrophe so spreadsheet applications treat them as
+    text. Numeric and other trusted fields are not passed through this helper.
+    """
+    if value is None:
+        return ""
+    s = str(value)
+    stripped = s.lstrip(" \t\r\n\f\v")
+    if stripped and stripped[0] in DANGEROUS_PREFIXES:
+        return "'" + s
+    return s
+
+
 def results_to_csv(results: List[Dict]) -> bytes:
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=["row_id", "text", "prediction", "confidence", "status"], quoting=csv.QUOTE_MINIMAL)
@@ -76,5 +95,8 @@ def results_to_csv(results: List[Dict]) -> bytes:
         row = dict(r)
         if len(row["text"]) > 500:
             row["text"] = row["text"][:500] + "..."
+        row["text"] = sanitize_csv_cell(row["text"])
+        # Status may echo parser messages; keep it as text-safe too.
+        row["status"] = sanitize_csv_cell(row["status"])
         writer.writerow(row)
     return output.getvalue().encode("utf-8")

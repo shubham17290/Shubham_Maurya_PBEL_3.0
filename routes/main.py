@@ -110,7 +110,14 @@ def history_page():
         label = None
     if label == "":
         label = None
-    page = max(1, int(request.args.get("page", 1)))
+    try:
+        page = int(request.args.get("page", 1))
+    except (TypeError, ValueError):
+        page = 1
+    if page < 1:
+        page = 1
+    if page > 10000:
+        page = 10000
     per_page = 20
     offset = (page - 1) * per_page
     items = list_predictions(limit=per_page, offset=offset, label=label)
@@ -205,7 +212,8 @@ def batch_process():
         else:
             articles = parse_txt_bytes(data)
     except Exception as exc:
-        flash(f"Could not parse file: {exc}", "danger")
+        current_app.logger.warning("Batch file parse failed: %s", exc)
+        flash("Could not parse file. Please check the format and try again.", "danger")
         return render_template("batch.html")
 
     max_rows = current_app.config.get("BATCH_MAX_ROWS", 1000)

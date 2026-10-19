@@ -18,8 +18,9 @@ class Config:
     DEBUG = False
     TESTING = False
 
-    # Request body limit (protects against oversized payloads)
-    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 1 * 1024 * 1024))
+    # Request body limit (protects against oversized payloads). Kept slightly
+    # above BATCH_MAX_FILE_SIZE to allow multipart/form-data overhead.
+    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 6 * 1024 * 1024))
 
     # Model paths (resolved against BASE_DIR when relative)
     MODEL_PATH = os.environ.get("MODEL_PATH", "model/model.pkl")
