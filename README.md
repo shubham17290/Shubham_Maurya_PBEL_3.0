@@ -801,5 +801,29 @@ If you found this project useful, consider giving it a ⭐ on GitHub.
 It helps others discover the project and motivates future improvements.
 
 
+# New Features
 
+## Prediction Explainability
+Each prediction returns the top supporting and opposing words based on TF-IDF x model weight.
+Positive contributions support "Real News"; negative support "Fake News".
 
+## Batch Prediction
+Upload a CSV (with a text/article/content/news/body column) or TXT (one article per line or blank-line separated).
+- Max file size: 5 MB (configurable via BATCH_MAX_FILE_SIZE).
+- Max 1000 articles per batch (configurable via BATCH_MAX_ROWS).
+- Download results as CSV with row_id, text (truncated to 500 chars), prediction, confidence, status.
+
+## Prediction History
+Predictions are stored in a local SQLite database (history.db).
+- Newest-first, paginated (20 per page), filterable by label.
+- Detail view per prediction.
+- Clear history with confirmation.
+- Excerpt length configurable via HISTORY_EXCERPT_LENGTH.
+
+### Database initialization
+The database and table are created automatically on first use. No manual migration needed.
+To change the location: set HISTORY_DB_PATH.
+
+### Running tests
+    pip install -r requirements-dev.txt
+    pytest -q
