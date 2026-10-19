@@ -49,6 +49,9 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     # Initialize security extensions (headers + rate limiting)
     initialize_security(app)
 
+    # Initialize observability (request ids + metrics)
+    initialize_observability(app)
+
     # Initialize extensions and components
     initialize_components(app)
 
@@ -78,6 +81,44 @@ def initialize_logging(app: Flask) -> None:
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
     app.logger.info("Logging initialized")
+
+
+def initialize_observability(app: Flask) -> None:
+    import time
+    import uuid
+    from utils.metrics import inc, observe
+
+    @app.before_request
+    def _start_timer():
+        from flask import g, request
+
+        g.start_time = time.time()
+        g.request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+
+    @app.after_request
+    def _record_metrics(response):
+        from flask import g, request
+
+        rid = getattr(g, "request_id", None)
+        if rid:
+            response.headers["X-Request-ID"] = rid
+
+        # Skip metrics bookkeeping for the metrics endpoint itself
+        if request.path != "/metrics":
+            inc("requests_total")
+            inc(f"status_{response.status_code}")
+            if hasattr(g, "start_time"):
+                observe("request_latency_seconds", time.time() - g.start_time)
+        return response
+
+    @app.route("/metrics", methods=["GET"])
+    def metrics():
+        from flask import jsonify
+        from utils.metrics import snapshot
+
+        return jsonify(snapshot()), 200
+
+    app.logger.info("Observability initialized")
 
 
 def initialize_security(app: Flask) -> None:
