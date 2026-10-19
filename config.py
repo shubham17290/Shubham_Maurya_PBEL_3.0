@@ -36,6 +36,10 @@ class Config:
     MIN_TEXT_LENGTH = int(os.environ.get("MIN_TEXT_LENGTH", 50))
     MAX_TEXT_LENGTH = int(os.environ.get("MAX_TEXT_LENGTH", 50000))
 
+    # Batch prediction limits
+    BATCH_MAX_FILE_SIZE = int(os.environ.get("BATCH_MAX_FILE_SIZE", 5 * 1024 * 1024))
+    BATCH_MAX_ROWS = int(os.environ.get("BATCH_MAX_ROWS", 1000))
+
     # Server settings
     HOST = os.environ.get("HOST", "0.0.0.0")
     PORT = int(os.environ.get("PORT", 5000))

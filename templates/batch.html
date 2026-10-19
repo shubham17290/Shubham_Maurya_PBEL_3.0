@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Batch Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="form-container">
+      <h2>📦 Batch Prediction</h2>
+      <p><a href="/">← Back to single prediction</a></p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form action="/batch" method="post" enctype="multipart/form-data">
+        {% if csrf_token %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        {% endif %}
+        <label for="file">Upload CSV or TXT file:</label>
+        <input type="file" name="file" id="file" accept=".csv,.txt" required>
+        <p class="hint">
+          CSV: include a header with a text column (text/article/content/news/body).<br>
+          TXT: one article per line, or articles separated by a blank line.<br>
+          Max file size: 5 MB. Max 1000 articles.
+        </p>
+        <button type="submit" class="submit-btn">Process Batch</button>
+      </form>
+    </div>
+  </body>
+</html>

@@ -11,6 +11,7 @@ from utils.prediction import ModelPredictor
 from utils.validation import validate_news_text
 from utils.rate_limit import limiter
 from utils.model_loader import get_predictor
+from utils.batch import parse_csv_bytes, parse_txt_bytes, process_articles, results_to_csv
 
 # Create blueprint
 main_bp = Blueprint('main', __name__)
@@ -98,3 +99,108 @@ def predict():
 
 def validate_input(text: str) -> Optional[str]:
     return validate_news_text(text)
+
+
+@main_bp.route("/batch", methods=["GET"])
+def batch_form():
+    csrf_token = None
+    if current_app.config.get("CSRF_ENABLED", True):
+        csrf_token = session.get("csrf_token")
+        if not csrf_token:
+            csrf_token = secrets.token_urlsafe(32)
+            session["csrf_token"] = csrf_token
+    return render_template("batch.html", csrf_token=csrf_token)
+
+
+@main_bp.route("/batch", methods=["POST"])
+def batch_process():
+    if current_app.config.get("CSRF_ENABLED", True):
+        token = request.form.get("csrf_token")
+        if not token or token != session.get("csrf_token"):
+            flash("Invalid or missing CSRF token. Please refresh and try again.", "danger")
+            return render_template("batch.html"), 400
+
+    if "file" not in request.files:
+        flash("No file uploaded.", "danger")
+        return render_template("batch.html")
+
+    f = request.files["file"]
+    if not f or not f.filename:
+        flash("No file selected.", "danger")
+        return render_template("batch.html")
+
+    filename = f.filename.lower()
+    if not (filename.endswith(".csv") or filename.endswith(".txt")):
+        flash("Unsupported file type. Please upload a CSV or TXT file.", "danger")
+        return render_template("batch.html")
+
+    data = f.read()
+    max_size = current_app.config.get("BATCH_MAX_FILE_SIZE", 5 * 1024 * 1024)
+    if len(data) == 0:
+        flash("Uploaded file is empty.", "danger")
+        return render_template("batch.html")
+    if len(data) > max_size:
+        flash(f"File too large. Maximum {max_size // (1024*1024)} MB allowed.", "danger")
+        return render_template("batch.html")
+
+    try:
+        if filename.endswith(".csv"):
+            articles = parse_csv_bytes(data)
+        else:
+            articles = parse_txt_bytes(data)
+    except Exception as exc:
+        flash(f"Could not parse file: {exc}", "danger")
+        return render_template("batch.html")
+
+    max_rows = current_app.config.get("BATCH_MAX_ROWS", 1000)
+    if len(articles) == 0:
+        flash("No articles found in file.", "danger")
+        return render_template("batch.html")
+    if len(articles) > max_rows:
+        flash(f"Too many rows. Maximum {max_rows} articles allowed.", "danger")
+        return render_template("batch.html")
+
+    model = get_predictor()
+    if model is None or not model.is_loaded():
+        flash("Model not loaded. Please try again later.", "danger")
+        return render_template("batch.html")
+
+    results = process_articles(
+        articles,
+        model,
+        min_length=current_app.config.get("MIN_TEXT_LENGTH", 50),
+        max_length=current_app.config.get("MAX_TEXT_LENGTH", 50000),
+    )
+
+    csv_bytes = results_to_csv(results)
+    import base64
+    session["batch_csv"] = base64.b64encode(csv_bytes).decode("ascii")
+    session["batch_filename"] = "predictions.csv"
+
+    ok = sum(1 for r in results if r["status"] == "ok")
+    failed = len(results) - ok
+    preview = results[:20]
+
+    return render_template(
+        "batch_results.html",
+        total=len(results),
+        successful=ok,
+        failed=failed,
+        preview=preview,
+    )
+
+
+@main_bp.route("/batch/download", methods=["GET"])
+def batch_download():
+    import base64
+    b64 = session.get("batch_csv")
+    if not b64:
+        flash("No batch results available. Please upload a file first.", "warning")
+        return render_template("batch.html")
+    data = base64.b64decode(b64)
+    from flask import Response
+    return Response(
+        data,
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=predictions.csv"},
+    )

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Batch Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="form-container" style="max-width:900px;">
+      <h2>📊 Batch Results</h2>
+      <p><a href="/batch">← New batch</a> | <a href="/">Home</a></p>
+
+      <p>Total: {{ total }} | Successful: {{ successful }} | Failed: {{ failed }}</p>
+      <a href="/batch/download" class="submit-btn" style="display:inline-block;width:auto;padding:8px 16px;text-decoration:none;">Download CSV</a>
+
+      <table style="width:100%;border-collapse:collapse;margin-top:16px;font-size:0.9em;">
+        <thead>
+          <tr>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">#</th>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Prediction</th>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Confidence</th>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Status</th>
+            <th style="border-bottom:1px solid #ccc;padding:6px;text-align:left;">Text (preview)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in preview %}
+          <tr>
+            <td style="padding:6px;">{{ r.row_id }}</td>
+            <td style="padding:6px;">{{ r.prediction or "-" }}</td>
+            <td style="padding:6px;">{{ r.confidence or "-" }}</td>
+            <td style="padding:6px;">{{ r.status }}</td>
+            <td style="padding:6px;">{{ r.text[:80] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if total > 20 %}
+      <p style="margin-top:8px;font-size:0.85em;color:#666;">Showing first 20 of {{ total }} rows. Download CSV for full results.</p>
+      {% endif %}
+    </div>
+  </body>
+</html>
