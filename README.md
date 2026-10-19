@@ -10,7 +10,7 @@ An AI-Powered Fake News Detection Web Application built using <b>Machine Learnin
 
 <p align="center">
 
-![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.0-black?logo=flask)
 ![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-ML-orange?logo=scikitlearn)
 ![Status](https://img.shields.io/badge/Status-Live-success)
@@ -372,7 +372,9 @@ The webpage displays:
 
 ## Health Check Endpoint
 
-### GET /health
+### GET /api/health
+
+(A `/health` alias may be added; see API routes.)
 
 Used to verify whether the application and ML model are loaded successfully.
 

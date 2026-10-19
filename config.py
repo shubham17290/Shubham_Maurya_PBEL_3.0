@@ -6,7 +6,7 @@ Supports different environments (development, production, testing).
 import os
 from pathlib import Path
 
-# Base directory
+# Base directory of the project (used to resolve relative paths)
 BASE_DIR = Path(__file__).parent
 
 
@@ -14,43 +14,50 @@ class Config:
     """Base configuration class with common settings."""
 
     # Flask settings
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
     DEBUG = False
     TESTING = False
 
-    # Model paths
-    MODEL_PATH = os.environ.get('MODEL_PATH', 'model/model.pkl')
-    VECTORIZER_PATH = os.environ.get('VECTORIZER_PATH', 'model/vectorizer.pkl')
+    # Request body limit (protects against oversized payloads)
+    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 1 * 1024 * 1024))
+
+    # Model paths (resolved against BASE_DIR when relative)
+    MODEL_PATH = os.environ.get("MODEL_PATH", "model/model.pkl")
+    VECTORIZER_PATH = os.environ.get("VECTORIZER_PATH", "model/vectorizer.pkl")
 
     # Logging
-    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
-    LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+    LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
     # Input validation
-    MIN_TEXT_LENGTH = 50
-    MAX_TEXT_LENGTH = 50000
+    MIN_TEXT_LENGTH = int(os.environ.get("MIN_TEXT_LENGTH", 50))
+    MAX_TEXT_LENGTH = int(os.environ.get("MAX_TEXT_LENGTH", 50000))
 
     # Server settings
-    HOST = os.environ.get('HOST', '0.0.0.0')
-    PORT = int(os.environ.get('PORT', 5000))
+    HOST = os.environ.get("HOST", "0.0.0.0")
+    PORT = int(os.environ.get("PORT", 5000))
+
+    # Session cookie hardening (safe defaults; production tightens further)
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = False
 
 
 class DevelopmentConfig(Config):
     """Development configuration."""
 
     DEBUG = True
-    LOG_LEVEL = 'DEBUG'
+    LOG_LEVEL = "DEBUG"
 
 
 class ProductionConfig(Config):
     """Production configuration."""
 
     DEBUG = False
-    SECRET_KEY = os.environ.get('SECRET_KEY')  # Must be set in production
+    SESSION_COOKIE_SECURE = True
 
-    # Use environment variables for sensitive data
-    MODEL_PATH = os.environ.get('MODEL_PATH', 'model/model.pkl')
-    VECTORIZER_PATH = os.environ.get('VECTORIZER_PATH', 'model/vectorizer.pkl')
+    # Secret key MUST be provided via environment in production.
+    SECRET_KEY = os.environ.get("SECRET_KEY")
 
 
 class TestingConfig(Config):
@@ -58,14 +65,17 @@ class TestingConfig(Config):
 
     TESTING = True
     DEBUG = True
+    SECRET_KEY = os.environ.get("SECRET_KEY", "test-secret-key")
+    # Disable CSRF/secure cookies conveniences for tests
+    SESSION_COOKIE_SECURE = False
 
 
 # Configuration dictionary
 config = {
-    'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'testing': TestingConfig,
-    'default': DevelopmentConfig
+    "development": DevelopmentConfig,
+    "production": ProductionConfig,
+    "testing": TestingConfig,
+    "default": DevelopmentConfig,
 }
 
 
@@ -78,7 +88,19 @@ def get_config(env: str = None) -> Config:
 
     Returns:
         Configuration object
+
+    Raises:
+        RuntimeError: If production is selected without a SECRET_KEY.
     """
     if env is None:
-        env = os.environ.get('FLASK_ENV', 'development')
-    return config.get(env, config['default'])
+        env = os.environ.get("FLASK_ENV", "development")
+
+    selected = config.get(env, config["default"])
+
+    if env == "production" and not getattr(selected, "SECRET_KEY", None):
+        raise RuntimeError(
+            "SECRET_KEY environment variable is required in production. "
+            "Set it before starting the application."
+        )
+
+    return selected

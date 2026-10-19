@@ -57,23 +57,6 @@ class ModelPredictor:
 
     _instance: Optional['ModelPredictor'] = None
 
-    def __new__(cls, model_path: str = "model/model.pkl",
-                vectorizer_path: str = "model/vectorizer.pkl") -> 'ModelPredictor':
-        """
-        Singleton pattern implementation to ensure only one instance exists.
-
-        Args:
-            model_path: Path to the trained model pickle file
-            vectorizer_path: Path to the vectorizer pickle file
-
-        Returns:
-            ModelPredictor instance
-        """
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-
     def __init__(self, model_path: str = "model/model.pkl",
                  vectorizer_path: str = "model/vectorizer.pkl"):
         """
@@ -83,15 +66,32 @@ class ModelPredictor:
             model_path: Path to the trained model pickle file
             vectorizer_path: Path to the vectorizer pickle file
         """
-        if self._initialized:
-            return
-
         self.model_path = Path(model_path)
         self.vectorizer_path = Path(vectorizer_path)
         self.model = None
         self.vectorizer = None
         self.preprocessor = TextPreprocessor()
-        self._initialized = True
+
+    @classmethod
+    def get_instance(cls, model_path: Optional[str] = None,
+                     vectorizer_path: Optional[str] = None) -> 'ModelPredictor':
+        """
+        Get (or create) the singleton instance of ModelPredictor.
+
+        Paths can be supplied on the first call; later calls keep the
+        existing paths unless the models have not been loaded yet.
+        """
+        if cls._instance is None:
+            cls._instance = cls(
+                model_path or "model/model.pkl",
+                vectorizer_path or "model/vectorizer.pkl",
+            )
+        else:
+            if model_path is not None and cls._instance.model is None:
+                cls._instance.model_path = Path(model_path)
+            if vectorizer_path is not None and cls._instance.vectorizer is None:
+                cls._instance.vectorizer_path = Path(vectorizer_path)
+        return cls._instance
 
     def load_models(self) -> None:
         """
@@ -209,14 +209,4 @@ class ModelPredictor:
             logger.error(f"Error during prediction: {e}")
             raise RuntimeError(f"Prediction failed: {str(e)}") from e
 
-    @classmethod
-    def get_instance(cls) -> 'ModelPredictor':
-        """
-        Get the singleton instance of ModelPredictor.
 
-        Returns:
-            ModelPredictor instance
-        """
-        if cls._instance is None:
-            cls._instance = ModelPredictor()
-        return cls._instance
