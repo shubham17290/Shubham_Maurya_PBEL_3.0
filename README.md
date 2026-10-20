@@ -86,7 +86,7 @@ The application is developed using **Flask** for the backend and provides a clea
 
 ## 🏠 Homepage
 
-The homepage provides a clean and responsive interface where users can enter any news article for analysis.
+The homepage provides a clean and responsive interface where users can paste any news article for analysis. A live character counter confirms when the text is long enough for a reliable prediction.
 
 <p align="center">
   <img src="assets/screenshots/homepage.png" alt="Homepage" width="90%">
@@ -124,10 +124,32 @@ Example of the prediction result when the entered news is classified as **Real**
 
 ---
 
+## ⚠️ Input Validation
 
+Articles shorter than 50 characters are rejected with a clear inline message, so users get immediate feedback instead of a low-confidence prediction.
 
 <p align="center">
-  <img src="assets/demo/demo.gif" alt="Project Demo" width="90%">
+  <img src="assets/screenshots/validation.png" alt="Input Validation" width="90%">
+</p>
+
+---
+
+## 📱 Mobile Responsive Design
+
+The interface adapts to smaller screens without horizontal scrolling, keeping the input, character counter, and prediction result readable on mobile devices.
+
+<p align="center">
+  <img src="assets/screenshots/mobile.png" alt="Mobile View" width="320">
+</p>
+
+---
+
+## 🎬 Demo
+
+A short UI walkthrough — from entering an article to viewing the Real and Fake classification results.
+
+<p align="center">
+  <img src="assets/demo/demo.gif" alt="NewsGuard AI Demo" width="90%">
 </p>
 
 ---
@@ -188,7 +210,9 @@ NewsGuard-AI/
 │   │   ├── homepage.png
 │   │   ├── prediction.png
 │   │   ├── fake-result.png
-│   │   └── real-result.png
+│   │   ├── real-result.png
+│   │   ├── validation.png
+│   │   └── mobile.png
 │   └── demo/
 │       └── demo.gif
 │
