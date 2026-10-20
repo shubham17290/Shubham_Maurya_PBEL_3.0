@@ -43,6 +43,9 @@ data/
 *.csv
 *.xlsx
 *.json
+!model/np_model/config.json
+!model/np_model/vocabulary.json
+!model/metadata.json
 
 # Static assets (use Vercel's CDN instead)
 assets/
