@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NewsGuard AI — Fake News Detection</title>
+  <meta name="description" content="NewsGuard AI: an AI-powered fake news detection web app built with Machine Learning, NLP and Flask. Masculine premium dark theme." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="#top">
+        <span class="brand-mark">N</span>
+        <span>NewsGuard AI</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#screenshots">Screenshots</a>
+        <a href="#tech">Tech</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#api">API</a>
+        <a href="#install">Install</a>
+        <a class="nav-cta" href="https://github.com/shubham17290/Shubham_Maurya_PBEL_3.0" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <span class="eyebrow">IBM PBEL Final Project</span>
+          <h1 class="hero-title">Detect <span class="gold">Fake News</span><br>with <span class="stroke">Machine Learning</span></h1>
+          <p class="hero-sub">NewsGuard AI analyzes any news article in seconds and classifies it as Real or Fake using NLP preprocessing, TF-IDF vectorization and a Logistic Regression model — served by a hardened Flask backend.</p>
+          <div class="hero-actions">
+            <a class="btn btn-gold" href="https://fake-news-detector-ten-orcin.vercel.app/" target="_blank" rel="noopener">Live Demo</a>
+            <a class="btn btn-ghost" href="#install">Get Started</a>
+          </div>
+          <div class="hero-stats">
+            <div><div class="stat-num">2</div><div class="stat-label">Classes (Real / Fake)</div></div>
+            <div><div class="stat-num">TF-IDF</div><div class="stat-label">Feature Extraction</div></div>
+            <div><div class="stat-num">Flask</div><div class="stat-label">Backend Framework</div></div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-card">
+            <div class="mock-header">
+              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            </div>
+            <div class="mock-body">
+              <div class="mock-line"><span class="mock-key">model:</span><span class="mock-val">LogisticRegression</span></div>
+              <div class="mock-line"><span class="mock-key">vectorizer:</span><span class="mock-val">TfidfVectorizer</span></div>
+              <div class="mock-line"><span class="mock-key">input:</span><span class="mock-val">"The Reserve Bank of India..."</span></div>
+              <div class="mock-line"><span class="mock-key">preprocess:</span><span class="mock-val">clean · lowercase · strip</span></div>
+              <div class="mock-result real">
+                <span class="label">REAL NEWS</span>
+                <span>92% confidence</span>
+              </div>
+              <div class="mock-bar"><span style="width:92%"></span></div>
+              <div class="mock-result fake" style="margin-top:12px">
+                <span class="label">FAKE NEWS</span>
+                <span>87% confidence</span>
+              </div>
+              <div class="mock-bar"><span style="width:87%;background:linear-gradient(90deg,#dc2626,#ef4444)"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="container">
+        <div class="section-head">
+          <div class="kicker">Capabilities</div>
+          <h2 class="section-title">Built for reliable, real-time detection</h2>
+          <p class="section-sub">A focused feature set that keeps the model honest and the user informed.</p>
+        </div>
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">AI</div>
+            <h3>Fake News Detection</h3>
+            <p>Binary classification (Real / Fake) powered by a trained Logistic Regression model.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">NLP</div>
+            <h3>Natural Language Processing</h3>
+            <p>Cleaning, lowercasing, URL/HTML removal and tokenization before vectorization.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">TF</div>
+            <h3>TF-IDF Vectorization</h3>
+            <p>Converts cleaned text into weighted numerical features for the classifier.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">RT</div>
+            <h3>Real-Time Prediction</h3>
+            <p>Async fetch-based prediction with spinner and live character counter.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">%</div>
+            <h3>Confidence Score</h3>
+            <p>Per-class probabilities with a low-confidence flag for uncertain inputs.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">UX</div>
+            <h3>Responsive Interface</h3>
+            <p>Mobile-friendly layout with inline validation and accessible live regions.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">SH</div>
+            <h3>Security Hardened</h3>
+            <p>CSRF protection, rate limiting, Talisman security headers, request IDs.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">OB</div>
+            <h3>Observability</h3>
+            <p>/metrics endpoint, request latency tracking and structured logging.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">DP</div>
+            <h3>Deployed on Vercel</h3>
+            <p>Production-ready with Docker, Procfile, Render and Vercel configurations.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screenshots">
+      <div class="container">
+        <div class="section-head">
+          <div class="kicker">Gallery</div>
+          <h2 class="section-title">Application screenshots</h2>
+          <p class="section-sub">A walkthrough of the interface from input to classification.</p>
+        </div>
+        <div class="gallery">
+          <div class="shot">
+            <img src="https://raw.githubusercontent.com/shubham17290/Shubham_Maurya_PBEL_3.0/main/assets/screenshots/homepage.png" alt="Homepage" loading="lazy" />
+            <div class="cap">Homepage — input with character counter</div>
+          </div>
+          <div class="shot">
+            <img src="https://raw.githubusercontent.com/shubham17290/Shubham_Maurya_PBEL_3.0/main/assets/screenshots/prediction.png" alt="Prediction" loading="lazy" />
+            <div class="cap">News prediction in progress</div>
+          </div>
+          <div class="shot">
+            <img src="https://raw.githubusercontent.com/shubham17290/Shubham_Maurya_PBEL_3.0/main/assets/screenshots/fake-result.png" alt="Fake result" loading="lazy" />
+            <div class="cap">Fake news classification result</div>
+          </div>
+          <div class="shot">
+            <img src="https://raw.githubusercontent.com/shubham17290/Shubham_Maurya_PBEL_3.0/main/assets/screenshots/real-result.png" alt="Real result" loading="lazy" />
+            <div class="cap">Real news classification result</div>
+          </div>
+          <div class="shot">
+            <img src="https://raw.githubusercontent.com/shubham17290/Shubham_Maurya_PBEL_3.0/main/assets/screenshots/validation.png" alt="Validation" loading="lazy" />
+            <div class="cap">Input validation feedback</div>
+          </div>
+          <div class="shot">
+            <img src="https://raw.githubusercontent.com/shubham17290/Shubham_Maurya_PBEL_3.0/main/assets/screenshots/mobile.png" alt="Mobile" loading="lazy" />
+            <div class="cap">Mobile responsive design</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tech">
+      <div class="container">
+        <div class="section-head">
+          <div class="kicker">Stack</div>
+          <h2 class="section-title">Technologies used</h2>
+        </div>
+        <div class="tech-grid">
+          <div class="tech"><span class="badge">Py</span><div><div class="name">Python 3.12</div><div class="role">Language</div></div></div>
+          <div class="tech"><span class="badge">Fl</span><div><div class="name">Flask 3.0</div><div class="role">Web framework</div></div></div>
+          <div class="tech"><span class="badge">ML</span><div><div class="name">scikit-learn</div><div class="role">ML model</div></div></div>
+          <div class="tech"><span class="badge">NP</span><div><div class="name">NumPy</div><div class="role">Inference backend</div></div></div>
+          <div class="tech"><span class="badge">PD</span><div><div class="name">Pandas</div><div class="role">Data processing</div></div></div>
+          <div class="tech"><span class="badge">WS</span><div><div class="name">Gunicorn</div><div class="role">WSGI server</div></div></div>
+          <div class="tech"><span class="badge">VC</span><div><div class="name">Vercel</div><div class="role">Deployment</div></div></div>
+          <div class="tech"><span class="badge">GH</span><div><div class="name">Git & GitHub</div><div class="role">Version control</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <div class="container">
+        <div class="section-head">
+          <div class="kicker">Flow</div>
+          <h2 class="section-title">Machine learning workflow</h2>
+        </div>
+        <div class="arch">
+          <div class="flow">
+            <div class="node">News Article</div>
+            <div class="arrow">→</div>
+            <div class="node">Text Cleaning</div>
+            <div class="arrow">→</div>
+            <div class="node">Preprocessing</div>
+            <div class="arrow">→</div>
+            <div class="node gold">TF-IDF Vectorization</div>
+            <div class="arrow">→</div>
+            <div class="node gold">Logistic Regression</div>
+            <div class="arrow">→</div>
+            <div class="node">Real / Fake + Confidence</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="api">
+      <div class="container">
+        <div class="section-head">
+          <div class="kicker">Endpoints</div>
+          <h2 class="section-title">API reference</h2>
+        </div>
+        <table class="api-table">
+          <thead>
+            <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="method get">GET</span></td><td>/</td><td>Homepage UI</td></tr>
+            <tr><td><span class="method post">POST</span></td><td>/predict</td><td>Predict via form submission</td></tr>
+            <tr><td><span class="method get">GET</span></td><td>/api/health</td><td>Health check (model_loaded)</td></tr>
+            <tr><td><span class="method get">GET</span></td><td>/api/info</td><td>API metadata and endpoints</td></tr>
+            <tr><td><span class="method post">POST</span></td><td>/api/predict</td><td>JSON prediction { text }</td></tr>
+            <tr><td><span class="method get">GET</span></td><td>/metrics</td><td>Observability snapshot</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="container">
+        <div class="section-head">
+          <div class="kicker">Setup</div>
+          <h2 class="section-title">Installation</h2>
+        </div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div>
+              <h4>Clone the repository</h4>
+              <pre class="code">git clone https://github.com/shubham17290/Shubham_Maurya_PBEL_3.0.git
+cd Shubham_Maurya_PBEL_3.0</pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div>
+              <h4>Create a virtual environment</h4>
+              <pre class="code">python -m venv venv
+# Windows
+venv\Scripts\activate
+# Linux / macOS
+source venv/bin/activate</pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div>
+              <h4>Install dependencies</h4>
+              <pre class="code">pip install -r requirements.txt</pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div>
+              <h4>Run the application</h4>
+              <pre class="code">python app.py
+# open http://127.0.0.1:5000</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-grid">
+      <div>© 2026 NewsGuard AI — Shubham Maurya · IBM PBEL Final Project</div>
+      <div>
+        <a href="https://github.com/shubham17290/Shubham_Maurya_PBEL_3.0" target="_blank" rel="noopener">GitHub</a> ·
+        <a href="guides/LOCAL_TESTING_GUIDE.md">Testing Guide</a> ·
+        <a href="guides/DEPLOYMENT_OPTIMIZATION.md">Deployment</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js" defer></script>
+</body>
+</html>
