@@ -107,3 +107,13 @@ history.db
 # *.csv
 # *.xlsx
 # *.json
+
+# Python tooling caches
+.ruff_cache/
+.mypy_cache/
+
+# Vercel local project metadata and deployment cache
+.vercel/
+
+# Local prediction history database (runtime data; preserve locally)
+history.db

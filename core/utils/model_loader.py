@@ -1,8 +1,6 @@
 """Lazy model loading helper shared by routes."""
 
 import threading
-from pathlib import Path
-from typing import Optional
 
 from flask import current_app
 
