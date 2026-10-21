@@ -909,3 +909,11 @@ dialog.confirm-dialog::backdrop {
     scroll-behavior: auto !important;
   }
 }
+
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
