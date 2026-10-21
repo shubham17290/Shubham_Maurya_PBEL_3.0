@@ -4,10 +4,10 @@ import json
 import pickle
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-MODEL = ROOT / "model" / "model.pkl"
-VECT = ROOT / "model" / "vectorizer.pkl"
-OUT = ROOT / "model" / "metadata.json"
+ROOT = Path(__file__).resolve().parents[2]
+MODEL = ROOT / "models" / "model.pkl"
+VECT = ROOT / "models" / "vectorizer.pkl"
+OUT = ROOT / "models" / "metadata.json"
 
 
 def main():

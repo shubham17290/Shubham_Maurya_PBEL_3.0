@@ -12,11 +12,11 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from utils.prediction import ModelPredictor  # noqa: E402
-from utils.validation import validate_news_text  # noqa: E402
+from core.utils.prediction import ModelPredictor  # noqa: E402
+from core.utils.validation import validate_news_text  # noqa: E402
 
 
 def main():
@@ -77,7 +77,7 @@ def main():
     print("\n" + classification_report(y_true, y_pred, target_names=["Fake", "Real"]))
 
     # Merge into metadata.json if present
-    meta_path = ROOT / "model" / "metadata.json"
+    meta_path = ROOT / "models" / "metadata.json"
     if meta_path.exists():
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
     else:

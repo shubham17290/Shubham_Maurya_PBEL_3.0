@@ -9,10 +9,10 @@ from pathlib import Path
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parents[1]
-MODEL = ROOT / "model" / "model.pkl"
-VECT = ROOT / "model" / "vectorizer.pkl"
-OUT_DIR = ROOT / "model" / "np_model"
+ROOT = Path(__file__).resolve().parents[2]
+MODEL = ROOT / "models" / "model.pkl"
+VECT = ROOT / "models" / "vectorizer.pkl"
+OUT_DIR = ROOT / "models" / "np_model"
 
 
 def main():
