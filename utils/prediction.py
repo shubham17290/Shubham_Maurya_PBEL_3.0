@@ -58,8 +58,8 @@ class ModelPredictor:
 
     _instance: Optional['ModelPredictor'] = None
 
-    def __init__(self, model_path: str = "model/model.pkl",
-                 vectorizer_path: str = "model/vectorizer.pkl"):
+    def __init__(self, model_path: str = "models/model.pkl",
+                 vectorizer_path: str = "models/vectorizer.pkl"):
         """
         Initialize the predictor with model and vectorizer paths.
 
@@ -84,8 +84,8 @@ class ModelPredictor:
         """
         if cls._instance is None:
             cls._instance = cls(
-                model_path or "model/model.pkl",
-                vectorizer_path or "model/vectorizer.pkl",
+                model_path or "models/model.pkl",
+                vectorizer_path or "models/vectorizer.pkl",
             )
         else:
             if model_path is not None and cls._instance.model is None:

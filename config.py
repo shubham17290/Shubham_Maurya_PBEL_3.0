@@ -22,8 +22,8 @@ class Config:
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 1 * 1024 * 1024))
 
     # Model paths (resolved against BASE_DIR when relative)
-    MODEL_PATH = os.environ.get("MODEL_PATH", "model/model.pkl")
-    VECTORIZER_PATH = os.environ.get("VECTORIZER_PATH", "model/vectorizer.pkl")
+    MODEL_PATH = os.environ.get("MODEL_PATH", "models/model.pkl")
+    VECTORIZER_PATH = os.environ.get("VECTORIZER_PATH", "models/vectorizer.pkl")
 
     # Inference backend: "numpy" (no scikit-learn at runtime) or "sklearn"
     INFERENCE_BACKEND = os.environ.get("INFERENCE_BACKEND", "numpy").lower()

@@ -39,13 +39,13 @@ Thumbs.db
 notebooks/
 
 # Data files (not needed in production deployment)
-data/
+assets/data/
 *.csv
 *.xlsx
 *.json
-!model/np_model/config.json
-!model/np_model/vocabulary.json
-!model/metadata.json
+!models/np_model/config.json
+!models/np_model/vocabulary.json
+!models/metadata.json
 
 # Static assets (use Vercel's CDN instead)
 assets/

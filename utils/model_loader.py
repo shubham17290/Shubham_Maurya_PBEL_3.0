@@ -24,7 +24,7 @@ def get_predictor():
             if backend == "numpy":
                 from utils.numpy_predictor import NumpyPredictor
 
-                model_dir = BASE_DIR / "model" / "np_model"
+                model_dir = BASE_DIR / "models" / "np_model"
                 p = NumpyPredictor(str(model_dir))
             else:
                 from utils.prediction import ModelPredictor

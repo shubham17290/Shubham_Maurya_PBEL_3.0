@@ -1,4 +1,4 @@
-"""Export metadata about the trained model/vectorizer to model/metadata.json."""
+"""Export metadata about the trained model/vectorizer to models/metadata.json."""
 
 import json
 import pickle

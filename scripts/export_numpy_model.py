@@ -1,6 +1,6 @@
 """Export the trained sklearn model/vectorizer to a NumPy/JSON bundle.
 
-Produces model/np_model/* files that allow inference without scikit-learn.
+Produces models/np_model/* files that allow inference without scikit-learn.
 """
 
 import json

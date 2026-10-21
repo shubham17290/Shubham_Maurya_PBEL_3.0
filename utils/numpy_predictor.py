@@ -17,7 +17,7 @@ LABEL_FAKE = "Fake News"
 class NumpyPredictor:
     """Drop-in replacement for ModelPredictor using only NumPy + stdlib."""
 
-    def __init__(self, model_dir: str = "model/np_model"):
+    def __init__(self, model_dir: str = "models/np_model"):
         self.model_dir = Path(model_dir)
         self.coef = None  # shape (1, n_features)
         self.intercept = None

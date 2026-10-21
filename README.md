@@ -191,7 +191,7 @@ NewsGuard-AI/
 ├── utils/
 │   └── prediction.py
 │
-├── model/
+├── models/
 │   ├── model.pkl
 │   └── vectorizer.pkl
 │
@@ -217,7 +217,7 @@ NewsGuard-AI/
 │   └── demo/
 │       └── demo.gif
 │
-├── data/
+├── assets/data/
 │   ├── Fake.csv
 │   └── True.csv
 │
@@ -509,10 +509,10 @@ The Fake News Detection system uses a **Logistic Regression** classification mod
 With a labeled CSV (columns `text`, `label` where 0=Fake, 1=Real):
 
 ```bash
-python scripts/evaluate.py data/labeled.csv
+python scripts/evaluate.py assets/data/labeled.csv
 ```
 
-This prints accuracy/precision/recall/F1 and writes the results into `model/metadata.json`.
+This prints accuracy/precision/recall/F1 and writes the results into `models/metadata.json`.
 
 Logistic Regression is a supervised machine learning algorithm widely used for binary classification problems. Since this project has only two classes (Real and Fake), it is an appropriate and efficient choice.
 
@@ -553,7 +553,7 @@ The model was trained using a publicly available Fake News dataset.
 Dataset Files:
 
 ```
-data/
+assets/data/
 ├── Fake.csv
 └── True.csv
 ```
@@ -646,7 +646,7 @@ The project uses the following Python libraries:
 The trained Machine Learning model is stored inside the **model** directory.
 
 ```
-model/
+models/
 ├── model.pkl
 └── vectorizer.pkl
 ```
@@ -720,7 +720,7 @@ The deployed application was also tested successfully after deployment on Render
 
 ### Model Not Loading
 
-- Verify that `model.pkl` and `vectorizer.pkl` are available inside the `model/` folder.
+- Verify that `model.pkl` and `vectorizer.pkl` are available inside the `models/` folder.
 - Ensure the correct file paths are used in the application.
 
 ---
