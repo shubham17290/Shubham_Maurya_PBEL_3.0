@@ -8,22 +8,18 @@ myenv/
 venv/
 .venv/
 env/
-ENV/
-
 # Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
 # OS files
 .DS_Store
 .DS_Store?
@@ -32,29 +28,21 @@ __pycache__/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
 # Jupyter notebooks
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
 notebooks/
-
 # Data files (not needed in production deployment)
 data/
 *.csv
 *.xlsx
 *.json
-!model/np_model/config.json
-!model/np_model/vocabulary.json
-!model/metadata.json
-
 # Static assets (use Vercel's CDN instead)
 assets/
-
 # Test files
 tests/
 *.test.py
 test_*.py
-
 # Coverage reports
 htmlcov/
 .tox/
@@ -62,18 +50,15 @@ htmlcov/
 .coverage.*
 .cache
 .pytest_cache/
-
 # Build artifacts
 build/
 dist/
 *.egg-info/
 *.egg
-
 # Documentation
 *.md
 !README.md
 docs/
-
 # Cache folders
 cache/
 .cache/
@@ -82,11 +67,12 @@ tmp/
 temp/
 *.tmp
 *.temp
-
 # Environment variables
 .env
 .env.*.local
-
 # Logs
 logs/
 *.log
+!models/np_model/config.json
+!models/np_model/vocabulary.json
+!models/metadata.json
