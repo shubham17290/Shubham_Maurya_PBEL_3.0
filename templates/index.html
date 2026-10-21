@@ -3,12 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Fake News Detection</title>
+    <title>NewsGuard AI — Fake News Detection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   </head>
   <body>
     <div class="form-container">
-      <h2>📰 Fake News Detection System</h2>
+      <div class="brand-bar">
+        <span class="brand-mark">N</span>
+        <span class="brand-name">NewsGuard AI</span>
+      </div>
+      <h2>Fake News Detection System</h2>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -22,7 +29,7 @@
         {% if csrf_token %}
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         {% endif %}
-        <label for="news_input">Enter News Article Text:</label>
+        <label for="news_input">Enter News Article Text</label>
         <textarea
           name="news_input"
           id="news_input"
