@@ -13,9 +13,7 @@
           "models/**/*",
           "templates/**/*",
           "static/**/*",
-          "utils/**/*",
-          "routes/**/*",
-          "config.py",
+          "core/**/*",
           "app.py",
           "requirements.txt"
         ],

@@ -7,10 +7,10 @@ from flask import Blueprint, render_template, flash, request, current_app, sessi
 import secrets
 from typing import Optional
 
-from utils.prediction import ModelPredictor
-from utils.validation import validate_news_text
-from utils.rate_limit import limiter
-from utils.model_loader import get_predictor
+from core.utils.prediction import ModelPredictor
+from core.utils.validation import validate_news_text
+from core.utils.rate_limit import limiter
+from core.utils.model_loader import get_predictor
 
 # Create blueprint
 main_bp = Blueprint('main', __name__)

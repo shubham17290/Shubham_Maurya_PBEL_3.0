@@ -8,7 +8,7 @@ from typing import Tuple
 
 import numpy as np
 
-from utils.prediction import TextPreprocessor
+from core.utils.prediction import TextPreprocessor
 
 LABEL_REAL = "Real News"
 LABEL_FAKE = "Fake News"
