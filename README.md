@@ -543,7 +543,7 @@ The Fake News Detection system uses a **Logistic Regression** classification mod
 With a labeled CSV (columns `text`, `label` where 0=Fake, 1=Real):
 
 ```bash
-python scripts/evaluate.py data/labeled.csv
+python core/scripts/evaluate.py data/labeled.csv
 ```
 
 This prints accuracy/precision/recall/F1 and writes the results into `model/metadata.json`.
