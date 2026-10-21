@@ -5,7 +5,6 @@ Produces models/np_model/* files that allow inference without scikit-learn.
 
 import json
 import pickle
-import sys
 from pathlib import Path
 
 import numpy as np

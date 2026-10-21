@@ -12,7 +12,6 @@ from typing import Optional
 from flask import Flask, render_template, flash
 
 from core.config import BASE_DIR, get_config
-from core.utils.prediction import ModelPredictor
 from core.utils.rate_limit import limiter
 
 

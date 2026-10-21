@@ -15,8 +15,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from utils.prediction import ModelPredictor
-from utils.validation import validate_news_text
+from utils.prediction import ModelPredictor  # noqa: E402
+from utils.validation import validate_news_text  # noqa: E402
 
 
 def main():

@@ -4,7 +4,6 @@ Provides REST API endpoints for programmatic access.
 """
 
 from flask import Blueprint, request, jsonify, current_app
-from typing import Dict, Tuple
 import logging
 
 from core.utils.prediction import ModelPredictor
