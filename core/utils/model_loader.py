@@ -6,7 +6,7 @@ from typing import Optional
 
 from flask import current_app
 
-from config import BASE_DIR
+from core.config import BASE_DIR
 
 _lock = threading.Lock()
 _predictor = None
@@ -22,12 +22,12 @@ def get_predictor():
         try:
             backend = current_app.config.get("INFERENCE_BACKEND", "numpy").lower()
             if backend == "numpy":
-                from utils.numpy_predictor import NumpyPredictor
+                from core.utils.numpy_predictor import NumpyPredictor
 
-                model_dir = BASE_DIR / "model" / "np_model"
+                model_dir = BASE_DIR / "models" / "np_model"
                 p = NumpyPredictor(str(model_dir))
             else:
-                from utils.prediction import ModelPredictor
+                from core.utils.prediction import ModelPredictor
 
                 p = ModelPredictor.get_instance(
                     model_path=current_app.config.get("MODEL_PATH"),

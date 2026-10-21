@@ -53,7 +53,7 @@ def test_history_flow(client):
 
 
 def test_csv_formula_injection_sanitized():
-    from utils.batch import sanitize_csv_cell, results_to_csv
+    from core.utils.batch import sanitize_csv_cell, results_to_csv
 
     assert sanitize_csv_cell("=SUM(A1:A2)") == "'=SUM(A1:A2)"
     assert sanitize_csv_cell("+1+1") == "'+1+1"

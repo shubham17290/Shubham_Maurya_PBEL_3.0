@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 # Base directory of the project (used to resolve relative paths)
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 class Config:

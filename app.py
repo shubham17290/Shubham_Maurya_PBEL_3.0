@@ -11,9 +11,9 @@ from typing import Optional
 
 from flask import Flask, render_template, flash
 
-from config import BASE_DIR, get_config
-from utils.prediction import ModelPredictor
-from utils.rate_limit import limiter
+from core.config import BASE_DIR, get_config
+from core.utils.prediction import ModelPredictor
+from core.utils.rate_limit import limiter
 
 
 def _resolve_path(value: str) -> Path:
@@ -86,7 +86,7 @@ def initialize_logging(app: Flask) -> None:
 def initialize_observability(app: Flask) -> None:
     import time
     import uuid
-    from utils.metrics import inc, observe
+    from core.utils.metrics import inc, observe
 
     @app.before_request
     def _start_timer():
@@ -114,7 +114,7 @@ def initialize_observability(app: Flask) -> None:
     @app.route("/metrics", methods=["GET"])
     def metrics():
         from flask import jsonify
-        from utils.metrics import snapshot
+        from core.utils.metrics import snapshot
 
         return jsonify(snapshot()), 200
 
@@ -152,12 +152,12 @@ def initialize_components(app: Flask) -> None:
     app.predictor = predictor
 
     # Initialize routes (predictor will be resolved lazily)
-    from routes.main import init_routes
+    from core.routes.main import init_routes
 
     init_routes(predictor)
 
     # Initialize API routes (predictor will be resolved lazily)
-    from routes.api import init_api_routes
+    from core.routes.api import init_api_routes
 
     init_api_routes(predictor)
 
@@ -165,7 +165,7 @@ def initialize_components(app: Flask) -> None:
 
 
 def register_blueprints(app: Flask) -> None:
-    from routes import main_bp, api_bp
+    from core.routes import main_bp, api_bp
 
     # Register main blueprint
     app.register_blueprint(main_bp)

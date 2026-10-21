@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional
 
-from config import BASE_DIR
+from core.config import BASE_DIR
 
 # Feedback values accepted from the UI. Stored separately from the model label;
 # user feedback is an opinion signal, never treated as verified ground truth.

@@ -54,7 +54,7 @@ def process_articles(articles, predictor, min_length: int, max_length: int) -> L
         if not art:
             results.append({"row_id": i, "text": art, "prediction": "", "confidence": "", "status": "empty row skipped"})
             continue
-        from utils.validation import validate_news_text
+        from core.utils.validation import validate_news_text
 
         err = validate_news_text(art, min_length=min_length, max_length=max_length)
         if err:

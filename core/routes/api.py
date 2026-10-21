@@ -8,10 +8,10 @@ from typing import Dict
 import logging
 import math
 
-from utils.prediction import ModelPredictor
-from utils.rate_limit import limiter
-from utils.model_loader import get_predictor
-from utils.history import save_prediction, set_feedback, get_prediction, FEEDBACK_VALUES
+from core.utils.prediction import ModelPredictor
+from core.utils.rate_limit import limiter
+from core.utils.model_loader import get_predictor
+from core.utils.history import save_prediction, set_feedback, get_prediction, FEEDBACK_VALUES
 
 # Create blueprint
 api_bp = Blueprint('api', __name__)
@@ -108,7 +108,7 @@ def api_predict():
         text = data.get('text', '').strip()
 
         # Validate input using shared helper and configured thresholds
-        from utils.validation import validate_news_text
+        from core.utils.validation import validate_news_text
 
         min_length = current_app.config.get("MIN_TEXT_LENGTH", 50)
         max_length = current_app.config.get("MAX_TEXT_LENGTH", 50000)

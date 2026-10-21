@@ -9,8 +9,8 @@ import re
 
 import pytest
 
-from config import BASE_DIR
-from utils import history as history_utils
+from core.config import BASE_DIR
+from core.utils import history as history_utils
 
 REAL_TEXT = (
     "The Reserve Bank of India announced that the repo rate will remain unchanged "
@@ -104,7 +104,7 @@ def test_api_predict_persists_history_and_returns_id(client):
 
 
 def test_invalid_probabilities_are_omitted_from_payload(client, monkeypatch):
-    from utils import model_loader
+    from core.utils import model_loader
 
     class FakeModel:
         def is_loaded(self):
@@ -130,7 +130,7 @@ def test_invalid_probabilities_are_omitted_from_payload(client, monkeypatch):
 
 
 def test_probabilities_out_of_range_are_omitted(client, monkeypatch):
-    from utils import model_loader
+    from core.utils import model_loader
 
     class FakeModel:
         def is_loaded(self):
