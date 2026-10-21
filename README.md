@@ -2,7 +2,7 @@
   <img src="assets/banner/banner.png" alt="NewsGuard AI Banner" width="100%">
 </p>
 
-<h1 align="center">🛡️ NewsGuard AI</h1>
+<h1 align="center">NewsGuard AI</h1>
 
 <p align="center">
 An AI-Powered Fake News Detection Web Application built using <b>Machine Learning</b>, <b>Natural Language Processing (NLP)</b>, and <b>Flask</b>.
@@ -10,11 +10,11 @@ An AI-Powered Fake News Detection Web Application built using <b>Machine Learnin
 
 <p align="center">
 
-![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
-![Flask](https://img.shields.io/badge/Flask-3.0-black?logo=flask)
-![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-ML-orange?logo=scikitlearn)
-![Status](https://img.shields.io/badge/Status-Live-success)
-![License](https://img.shields.io/badge/Project-IBM%20PBEL-blueviolet)
+![Python](https://img.shields.io/badge/Python-3.12-0a0f1c?logo=python&logoColor=d4af37&labelColor=131b2e&color=d4af37)
+![Flask](https://img.shields.io/badge/Flask-3.0-0a0f1c?logo=flask&logoColor=d4af37&labelColor=131b2e&color=d4af37)
+![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-ML-0a0f1c?logo=scikitlearn&logoColor=d4af37&labelColor=131b2e&color=d4af37)
+![Status](https://img.shields.io/badge/Status-Live-0a0f1c?labelColor=131b2e&color=10b981)
+![Project](https://img.shields.io/badge/IBM%20PBEL-Final%20Project-0a0f1c?labelColor=131b2e&color=d4af37)
 
 </p>
 
