@@ -41,6 +41,9 @@ body {
 a { color: var(--gold); text-decoration: none; transition: color .2s; }
 a:hover { color: var(--gold-bright); }
 
+.hero-banner { width: 100%; overflow: hidden; border-bottom: 1px solid var(--border); }
+.hero-banner img { width: 100%; height: auto; display: block; filter: saturate(1.05) contrast(1.05); }
+
 .container { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
 
 /* ---------- Nav ---------- */
