@@ -2,11 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, improvement]
   pull_request:
-    branches: [main]
+    branches: [main, improvement]
 
-# Tests only need read access to the repository contents.
 permissions:
   contents: read
 
