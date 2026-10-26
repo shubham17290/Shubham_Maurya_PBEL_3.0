@@ -1,156 +1,67 @@
-# Vercel Deployment Optimization - Bundle Size Reduction
+# Vercel Deployment Guide
 
-## Problem
-- **Original Bundle Size:** 545.17 MB
-- **Vercel Limit:** 500 MB
-- **Status:** ❌ EXCEEDED LIMIT
+This project deploys the Flask application to Vercel with the Python runtime. The deployment is intentionally limited to runtime code and model artifacts; datasets, documentation, tests, and local caches are excluded.
 
-## Solution Implemented
+## Deployment inputs
 
-### 1. Created `.vercelignore` File
-**Purpose:** Excludes non-essential files from deployment
-**Space Saved:** ~544.77 MB
+| Path | Purpose |
+|---|---|
+| `app.py` | WSGI entrypoint and Flask application factory |
+| `core/` | Configuration, routes, utilities, and scripts |
+| `templates/` | Flask/Jinja templates |
+| `static/` | CSS and browser JavaScript |
+| `models/` | Model, vectorizer, metadata, and NumPy inference bundle |
+| `requirements.txt` | Production dependencies |
+| `vercel.json` | Vercel build and routing configuration |
+| `.vercelignore` | Files excluded from the deployment upload |
 
-**Excluded Items:**
-- `.git/` - 173.04 MB (version control - not needed in deployment)
-- `myenv/` - 320.22 MB (virtual environment - Vercel installs its own)
-- `data/` - 51.10 MB (training datasets - not needed for inference)
-- `assets/` - 0.41 MB (static files - use Vercel CDN)
-- `notebooks/`, `__pycache__/`, IDE files, OS files, etc.
+`vercel.json` uses `@vercel/python` with Python 3.12. Its `includeFiles` list keeps the Flask entrypoint, `core/`, `templates/`, `static/`, and `models/` in the build.
 
-### 2. Created `vercel.json` Configuration
-**Purpose:** Explicitly configure Vercel build process
-**Key Settings:**
-- Runtime: Python 3.12
-- Max Lambda Size: 50 MB
-- Memory: 1024 MB
-- Max Duration: 10 seconds
-- Include only essential files (model, templates, utils, routes)
-- Exclude all bloat via `includeFiles` whitelist
+## Exclusions that matter
 
-### 3. Optimized `requirements.txt`
-**Purpose:** Remove unnecessary heavy dependencies
-**Space Saved:** ~100+ MB
+- `assets/` (including the large training CSV) is excluded from deployment.
+- `docs/`, `tests/`, `.git/`, virtual environments, and caches are excluded.
+- `.vercelignore` excludes broad `*.json` files for data safety, but explicitly re-includes the required model JSON files:
+  - `models/np_model/config.json`
+  - `models/np_model/vocabulary.json`
+  - `models/metadata.json`
 
-#### Dependencies REMOVED:
-| Package | Version | Reason | Size |
-|---------|---------|--------|------|
-| **gunicorn** | 22.0.0 | Not needed - Vercel handles WSGI | ~10 MB |
-| **pandas** | 2.2.2 | Not used in code (no imports found) | ~50 MB |
-| **scipy** | 1.11.4 | Not used in code (no imports found) | ~30 MB |
-| **Cython** | 0.29.36 | Build-only dependency, not runtime | ~20 MB |
+Do not remove those negations. Without them, the NumPy inference backend cannot load.
 
-#### Dependencies KEPT:
-| Package | Version | Reason |
-|---------|---------|--------|
-| **Flask** | 3.0.3 | Web framework - required |
-| **scikit-learn** | 1.3.2 | Required to unpickle model files |
-| **numpy** | <2.0.0 | Required by scikit-learn |
-| **joblib** | 1.4.2 | Required to load pickled models |
+## Production inference
 
-### 4. Code Analysis Results
-**Finding:** Your application code is already optimized!
-- ✅ No pandas imports found
-- ✅ No scipy imports found
-- ✅ No numpy direct imports (used via scikit-learn)
-- ✅ Only standard library + Flask + pickle used
-- ✅ Clean, minimal imports in all files
+The default backend is `numpy`, configured by `INFERENCE_BACKEND` in `core/config.py`. It reads the bundle in `models/np_model/` and does not require scikit-learn at runtime.
 
-## Bundle Size Breakdown
+The scikit-learn backend is optional. To use it:
 
-### BEFORE Optimization:
-```
-Total Bundle:        545.17 MB  ❌
-├─ .git/             173.04 MB  (excluded)
-├─ myenv/            320.22 MB  (excluded)
-├─ data/              51.10 MB  (excluded)
-├─ assets/             0.41 MB  (excluded)
-└─ Actual code + deps ~0.40 MB  (remains)
+1. Install `requirements-ml.txt`.
+2. Set `INFERENCE_BACKEND=sklearn`.
+3. Keep `MODEL_PATH` and `VECTORIZER_PATH` pointed at `models/model.pkl` and `models/vectorizer.pkl`.
+
+## Required Vercel environment
+
+`vercel.json` sets `FLASK_ENV=production`. Production configuration requires a `SECRET_KEY`; set it in the Vercel project environment before deploying. Never commit the secret.
+
+## Local checks before deploying
+
+```bash
+python -m pytest -q
+python -m ruff check .
+python app.py
 ```
 
-### AFTER Optimization:
+Then check:
+
+```bash
+curl http://localhost:5000/api/health
+curl -X POST http://localhost:5000/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{"text":"The Reserve Bank of India announced its latest monetary policy decision this week."}'
 ```
-Estimated Bundle:    ~4-5 MB  ✅
-├─ Flask + deps      ~3-4 MB
-├─ Model files       3.28 MB
-├─ Application code  ~0.5 MB
-└─ Templates/static  ~0.5 MB
-
-Vercel Limit:        500 MB
-Status:              ✅ UNDER LIMIT (494 MB headroom)
-```
-
-## Files Modified
-
-1. **`.vercelignore`** - NEW (89 lines)
-   - Comprehensive exclusion list for Vercel
-
-2. **`vercel.json`** - NEW (38 lines)
-   - Build configuration and optimization settings
-
-3. **`requirements.txt`** - MODIFIED (4 lines, was 10 lines)
-   - Removed 4 heavy dependencies
-   - Reduced from 8 to 4 packages
-
-## Deployment Instructions
-
-1. **Commit these changes:**
-   ```bash
-   git add .vercelignore vercel.json requirements.txt
-   git commit -m "Optimize bundle size for Vercel deployment"
-   git push
-   ```
-
-2. **Redeploy on Vercel:**
-   - Vercel will automatically detect the changes
-   - Build should now succeed without size errors
-
-3. **Verify deployment:**
-   - Check Vercel build logs for bundle size
-   - Should now be well under 500 MB limit
-
-## Important Notes
-
-### Model Files
-- Your model files (`model/model.pkl` = 0.66 MB, `model/vectorizer.pkl` = 2.62 MB) are **included** in the deployment
-- These are required for the application to make predictions
-- Total model size: 3.28 MB (acceptable)
-
-### Why scikit-learn is still needed
-Even though your code doesn't directly import scikit-learn, the pickled model files were created using scikit-learn. When unpickling, Python needs scikit-learn to be installed to deserialize the model objects correctly.
-
-### Why numpy is still needed
-scikit-learn depends on numpy internally, so it's installed as a transitive dependency.
-
-### What NOT to do
-- ❌ Don't add the `myenv/` folder to git
-- ❌ Don't commit the `data/` folder
-- ❌ Don't add heavy dependencies back to requirements.txt
-- ❌ Don't modify the `.vercelignore` file without understanding the impact
-
-## Expected Results
-
-After redeployment:
-- ✅ Build succeeds without size errors
-- ✅ Application loads correctly
-- ✅ Models load and predictions work
-- ✅ Well under Vercel's 500 MB limit
-- ✅ Fast cold starts (smaller bundle)
 
 ## Troubleshooting
 
-If you still encounter issues:
-
-1. **Check Vercel build logs** for specific size breakdown
-2. **Verify .vercelignore is committed** to git
-3. **Ensure requirements.txt has only 4 packages**
-4. **Check that model files exist** in the model/ directory
-5. **Review vercel.json** is valid JSON (no syntax errors)
-
-## Additional Optimization (If Needed)
-
-If bundle is still too large:
-1. Consider model quantization (reduce model file size)
-2. Use model compression techniques
-3. Split into multiple serverless functions
-4. Consider Vercel Pro plan (higher limits)
+- **Model not loaded:** verify `models/np_model/config.json`, `vocabulary.json`, `coef.npy`, `idf.npy`, and `intercept.npy` are present.
+- **Build too large:** confirm `assets/` and `docs/` are still excluded.
+- **Production startup fails:** confirm `SECRET_KEY` is configured for the Vercel environment.
+- **API returns 503:** the model files are missing or unreadable; check the deployment function log.

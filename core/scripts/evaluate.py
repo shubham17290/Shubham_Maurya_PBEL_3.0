@@ -1,7 +1,7 @@
 """Evaluate the trained model on a labeled CSV.
 
 Usage:
-    python scripts/evaluate.py path/to/data.csv [--text-col text] [--label-col label]
+    python core/scripts/evaluate.py path/to/data.csv [--text-col text] [--label-col label]
 
 The CSV must contain a text column and a binary label column (0=fake, 1=real).
 """

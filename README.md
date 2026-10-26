@@ -166,10 +166,10 @@ The following technologies and tools were used to develop this project.
 | HTML5 | Frontend Structure |
 | CSS3 | Styling |
 | JavaScript | Client-side Interactions |
-| Scikit-learn | Machine Learning Model |
-| Pandas | Data Manipulation |
-| NumPy | Numerical Computing |
-| Pickle | Model Serialization |
+| Scikit-learn | Model training and optional sklearn inference backend |
+| Pandas | Training data preparation |
+| NumPy | Default inference backend and numerical computing |
+| Pickle | scikit-learn model serialization |
 | Gunicorn | Production WSGI Server |
 | Render | Cloud Deployment |
 | Git & GitHub | Version Control |
@@ -181,19 +181,36 @@ The following technologies and tools were used to develop this project.
 ```text
 NewsGuard-AI/
 │
-├── app.py
-├── requirements.txt
-├── Procfile
-├── runtime.txt
-├── README.md
-├── .gitignore
-│
-├── utils/
-│   └── prediction.py
+├── app.py                     # Flask application factory + WSGI entrypoint
+├── core/
+│   ├── config.py
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── api.py
+│   │   └── main.py
+│   ├── scripts/
+│   │   ├── evaluate.py
+│   │   ├── export_metadata.py
+│   │   └── export_numpy_model.py
+│   └── utils/
+│       ├── __init__.py
+│       ├── metrics.py
+│       ├── model_loader.py
+│       ├── numpy_predictor.py
+│       ├── prediction.py
+│       ├── rate_limit.py
+│       └── validation.py
 │
 ├── models/
 │   ├── model.pkl
-│   └── vectorizer.pkl
+│   ├── vectorizer.pkl
+│   ├── metadata.json
+│   └── np_model/
+│       ├── coef.npy
+│       ├── config.json
+│       ├── idf.npy
+│       ├── intercept.npy
+│       └── vocabulary.json
 │
 ├── templates/
 │   └── index.html
@@ -201,28 +218,48 @@ NewsGuard-AI/
 ├── static/
 │   ├── css/
 │   │   └── style.css
-│   ├── js/
-│   └── images/
+│   └── js/
+│       └── main.js
 │
 ├── assets/
 │   ├── banner/
 │   │   └── banner.png
-│   ├── screenshots/
-│   │   ├── homepage.png
-│   │   ├── prediction.png
-│   │   ├── fake-result.png
-│   │   ├── real-result.png
-│   │   ├── validation.png
-│   │   └── mobile.png
-│   └── demo/
-│       └── demo.gif
+│   ├── data/
+│   │   └── True.csv
+│   ├── demo/
+│   │   └── demo.gif
+│   └── screenshots/
+│       └── ...
 │
-├── assets/data/
-│   ├── Fake.csv
-│   └── True.csv
+├── tests/
+│   ├── conftest.py
+│   └── test_app.py
 │
-└── notebooks/
-    └── FakeNewsDetectionUsingMachineLearning.ipynb
+├── docs/                      # GitHub Pages site + guides
+│   ├── index.html
+│   ├── css/
+│   ├── js/
+│   └── guides/
+│
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       └── pages.yml
+│
+├── requirements.txt
+├── requirements-ml.txt
+├── requirements-dev.txt
+├── Dockerfile
+├── Procfile
+├── runtime.txt
+├── vercel.json
+├── .vercelignore
+├── pytest.ini
+├── .env.example
+├── .gitignore
+├── README.md
+├── history.db                 # Local prediction history (preserved)
+└── index.html                 # Redirects to docs/
 ```
 
 ---
@@ -554,16 +591,17 @@ Dataset Files:
 
 ```
 assets/data/
-├── Fake.csv
 └── True.csv
 ```
+
+The current checkout includes the `True.csv` split. If you have the companion `Fake.csv` split from the public dataset, place it in `assets/data/` for local training or evaluation; the data directory is excluded from production deployment.
 
 The dataset contains thousands of labeled news articles belonging to two categories:
 
 - Fake News
 - Real News
 
-The datasets were merged, shuffled, preprocessed, and then divided into training and testing sets before model training.
+The training pipeline merges, shuffles, preprocesses, and splits the labeled articles before fitting the model.
 
 ---
 
@@ -643,23 +681,34 @@ The project uses the following Python libraries:
 
 # 📁 Model Files
 
-The trained Machine Learning model is stored inside the **model** directory.
+The trained Machine Learning artifacts are stored inside the **`models/`** directory.
 
 ```
 models/
 ├── model.pkl
-└── vectorizer.pkl
+├── vectorizer.pkl
+├── metadata.json
+└── np_model/
+    ├── coef.npy
+    ├── config.json
+    ├── idf.npy
+    ├── intercept.npy
+    └── vocabulary.json
 ```
 
 ### model.pkl
 
-Stores the trained Logistic Regression model.
+Stores the trained Logistic Regression model (scikit-learn backend).
 
 ### vectorizer.pkl
 
-Stores the trained TF-IDF Vectorizer used during training.
+Stores the trained TF-IDF Vectorizer used during training (scikit-learn backend).
 
-These files are loaded automatically when the Flask application starts.
+### np_model/
+
+Stores the NumPy/JSON inference bundle used by the default `numpy` backend. It allows production inference without loading scikit-learn.
+
+The predictor is loaded lazily on the first health check or prediction request, which keeps application startup fast.
 
 ---
 
@@ -691,13 +740,18 @@ The application has been successfully deployed on **Render**, making it accessib
 - Gunicorn (WSGI Server)
 - Flask
 
-The deployment was configured using the following files:
+The Render deployment was configured using the following files:
 
 ```
 requirements.txt
 Procfile
 runtime.txt
 ```
+
+Additional deployment configuration is included for Vercel and Docker:
+
+- **Vercel:** `vercel.json` and `.vercelignore`; see `docs/guides/DEPLOYMENT_OPTIMIZATION.md`.
+- **Docker:** `Dockerfile` runs the application with Gunicorn on port 5000.
 
 ---
 
