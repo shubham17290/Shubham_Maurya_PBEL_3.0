@@ -3,12 +3,13 @@ API routes for Fake News Detection Application.
 Provides REST API endpoints for programmatic access.
 """
 
-from flask import Blueprint, request, jsonify, current_app
 import logging
 
+from flask import Blueprint, current_app, jsonify, request
+
+from core.utils.model_loader import get_predictor
 from core.utils.prediction import ModelPredictor
 from core.utils.rate_limit import limiter
-from core.utils.model_loader import get_predictor
 
 # Create blueprint
 api_bp = Blueprint('api', __name__)
@@ -100,7 +101,7 @@ def api_predict():
             logger.warning(f'Invalid input for API prediction: {e}')
             return jsonify({
                 'success': False,
-                'error': f'Invalid input: {str(e)}'
+                'error': f'Invalid input: {e!s}'
             }), 400
         except RuntimeError as e:
             logger.error(f'API prediction runtime error: {e}')
@@ -135,7 +136,7 @@ def api_predict():
         return jsonify(payload), 200
 
     except Exception as e:
-        logger.error(f'Unexpected error in API predict: {e}', exc_info=True)
+        logger.error(f'Unexpected error in API predict: {e}')
         return jsonify({
             'success': False,
             'error': 'An unexpected error occurred. Please try again later.'

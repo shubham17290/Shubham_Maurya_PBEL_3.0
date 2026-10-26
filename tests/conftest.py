@@ -8,6 +8,7 @@ os.environ.setdefault("FLASK_ENV", "testing")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 
 import pytest
+
 from app import create_app
 
 

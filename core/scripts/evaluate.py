@@ -15,8 +15,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from core.utils.prediction import ModelPredictor  # noqa: E402
-from core.utils.validation import validate_news_text  # noqa: E402
+from core.utils.prediction import ModelPredictor
+from core.utils.validation import validate_news_text
 
 
 def main():
@@ -57,11 +57,11 @@ def main():
     # Metrics without extra deps beyond sklearn
     from sklearn.metrics import (
         accuracy_score,
+        classification_report,
+        confusion_matrix,
+        f1_score,
         precision_score,
         recall_score,
-        f1_score,
-        confusion_matrix,
-        classification_report,
     )
 
     metrics = {

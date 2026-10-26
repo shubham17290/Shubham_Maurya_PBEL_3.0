@@ -37,6 +37,6 @@ def get_predictor():
             current_app.predictor = p
             current_app.logger.info("ML model loaded lazily (backend=%s)", backend)
             return _predictor
-        except Exception as exc:
+        except Exception:
             current_app.logger.error(f"Lazy model load failed: {exc}")
             return None

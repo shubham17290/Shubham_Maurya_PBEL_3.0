@@ -3,23 +3,23 @@ Main routes for Fake News Detection Application.
 Handles web page routes.
 """
 
-from flask import Blueprint, render_template, flash, request, current_app, session
 import secrets
-from typing import Optional
 
-from core.utils.prediction import ModelPredictor
-from core.utils.validation import validate_news_text
-from core.utils.rate_limit import limiter
+from flask import Blueprint, current_app, flash, render_template, request, session
+
 from core.utils.model_loader import get_predictor
+from core.utils.prediction import ModelPredictor
+from core.utils.rate_limit import limiter
+from core.utils.validation import validate_news_text
 
 # Create blueprint
 main_bp = Blueprint('main', __name__)
 
 # Global predictor instance (resolved lazily)
-predictor: Optional[ModelPredictor] = None
+predictor: ModelPredictor | None = None
 
 
-def init_routes(predictor_instance: Optional[ModelPredictor]) -> None:
+def init_routes(predictor_instance: ModelPredictor | None) -> None:
     global predictor
     predictor = predictor_instance
 
@@ -79,7 +79,7 @@ def predict():
             result, confidence = model.predict(news_text)
         except ValueError as e:
             current_app.logger.warning(f'Invalid input: {e}')
-            flash(f'Invalid input: {str(e)}', 'warning')
+            flash(f'Invalid input: {e!s}', 'warning')
             return render_template('index.html')
         except RuntimeError as e:
             current_app.logger.error(f'Prediction error: {e}')
@@ -91,10 +91,10 @@ def predict():
         return render_template('index.html', prediction_text=prediction_text)
 
     except Exception as e:
-        current_app.logger.error(f'Unexpected error in predict: {e}', exc_info=True)
+        current_app.logger.error(f'Unexpected error in predict: {e}')
         flash('An unexpected error occurred. Please try again later.', 'danger')
         return render_template('index.html')
 
 
-def validate_input(text: str) -> Optional[str]:
+def validate_input(text: str) -> str | None:
     return validate_news_text(text)

@@ -1,9 +1,8 @@
 """Shared input validation helpers."""
 
-from typing import Optional
 
 
-def validate_news_text(text: str, min_length: int = 50, max_length: int = 50000) -> Optional[str]:
+def validate_news_text(text: str, min_length: int = 50, max_length: int = 50000) -> str | None:
     """Validate a news article string.
 
     Returns an error message if invalid, otherwise ``None``.

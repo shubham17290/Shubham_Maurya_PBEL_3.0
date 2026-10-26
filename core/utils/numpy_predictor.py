@@ -4,7 +4,6 @@ import json
 import math
 import re
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 
@@ -107,7 +106,7 @@ class NumpyPredictor:
 
         return vec
 
-    def predict(self, text: str) -> Tuple[str, float]:
+    def predict(self, text: str) -> tuple[str, float]:
         if not text or not isinstance(text, str):
             raise ValueError("Input text must be a non-empty string")
 

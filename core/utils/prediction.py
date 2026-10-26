@@ -3,12 +3,12 @@ Prediction utilities for Fake News Detection.
 Contains text preprocessing and model prediction functions.
 """
 
-import re
+import logging
 import math
 import pickle
-import logging
-from typing import Tuple, Optional
+import re
 from pathlib import Path
+from typing import Optional
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -74,8 +74,8 @@ class ModelPredictor:
         self.preprocessor = TextPreprocessor()
 
     @classmethod
-    def get_instance(cls, model_path: Optional[str] = None,
-                     vectorizer_path: Optional[str] = None) -> 'ModelPredictor':
+    def get_instance(cls, model_path: str | None = None,
+                     vectorizer_path: str | None = None) -> 'ModelPredictor':
         """
         Get (or create) the singleton instance of ModelPredictor.
 
@@ -142,7 +142,7 @@ class ModelPredictor:
             raise
         except Exception as e:
             logger.error(f"Error loading models: {e}")
-            raise Exception(f"Failed to load ML models: {str(e)}") from e
+            raise Exception(f"Failed to load ML models: {e!s}") from e
 
     def is_loaded(self) -> bool:
         """
@@ -153,7 +153,7 @@ class ModelPredictor:
         """
         return self.model is not None and self.vectorizer is not None
 
-    def predict(self, text: str) -> Tuple[str, float]:
+    def predict(self, text: str) -> tuple[str, float]:
         """
         Make a prediction on the given text.
 
@@ -208,7 +208,7 @@ class ModelPredictor:
 
         except Exception as e:
             logger.error(f"Error during prediction: {e}")
-            raise RuntimeError(f"Prediction failed: {str(e)}") from e
+            raise RuntimeError(f"Prediction failed: {e!s}") from e
 
     def predict_proba(self, text: str):
         """Return per-class probabilities for the given text."""

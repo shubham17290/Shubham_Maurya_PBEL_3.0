@@ -19,7 +19,7 @@ class Config:
     TESTING = False
 
     # Request body limit (protects against oversized payloads)
-    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 1 * 1024 * 1024))
+    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", str(1 * 1024 * 1024)))
 
     # Model paths (resolved against BASE_DIR when relative)
     MODEL_PATH = os.environ.get("MODEL_PATH", "models/model.pkl")
@@ -33,12 +33,12 @@ class Config:
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
     # Input validation
-    MIN_TEXT_LENGTH = int(os.environ.get("MIN_TEXT_LENGTH", 50))
-    MAX_TEXT_LENGTH = int(os.environ.get("MAX_TEXT_LENGTH", 50000))
+    MIN_TEXT_LENGTH = int(os.environ.get("MIN_TEXT_LENGTH", str(50)))
+    MAX_TEXT_LENGTH = int(os.environ.get("MAX_TEXT_LENGTH", str(50000)))
 
     # Server settings
     HOST = os.environ.get("HOST", "0.0.0.0")
-    PORT = int(os.environ.get("PORT", 5000))
+    PORT = int(os.environ.get("PORT", str(5000)))
 
     # Session cookie hardening (safe defaults; production tightens further)
     SESSION_COOKIE_HTTPONLY = True

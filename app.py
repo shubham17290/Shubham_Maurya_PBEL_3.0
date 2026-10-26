@@ -7,9 +7,8 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
-from flask import Flask, render_template, flash
+from flask import Flask, flash, render_template
 
 from core.config import BASE_DIR, get_config
 from core.utils.rate_limit import limiter
@@ -23,7 +22,7 @@ def _resolve_path(value: str) -> Path:
     return BASE_DIR / path
 
 
-def create_app(config_name: Optional[str] = None) -> Flask:
+def create_app(config_name: str | None = None) -> Flask:
     """
     Application factory function.
     Creates and configures the Flask application.
@@ -85,6 +84,7 @@ def initialize_logging(app: Flask) -> None:
 def initialize_observability(app: Flask) -> None:
     import time
     import uuid
+
     from core.utils.metrics import inc, observe
 
     @app.before_request
@@ -113,6 +113,7 @@ def initialize_observability(app: Flask) -> None:
     @app.route("/metrics", methods=["GET"])
     def metrics():
         from flask import jsonify
+
         from core.utils.metrics import snapshot
 
         return jsonify(snapshot()), 200
@@ -135,8 +136,8 @@ def initialize_security(app: Flask) -> None:
                 "img-src": ["'self'", "data:"],
             },
         )
-    except Exception as exc:  # pragma: no cover - defensive
-        app.logger.warning(f"Talisman not enabled: {exc}")
+    except ImportError:
+        app.logger.warning("Talisman not enabled - using default security headers")
 
     limiter.init_app(app)
     app.logger.info("Security extensions initialized")
@@ -164,7 +165,7 @@ def initialize_components(app: Flask) -> None:
 
 
 def register_blueprints(app: Flask) -> None:
-    from core.routes import main_bp, api_bp
+    from core.routes import api_bp, main_bp
 
     # Register main blueprint
     app.register_blueprint(main_bp)
@@ -183,7 +184,7 @@ def register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(500)
     def internal_error(error):
-        app.logger.error(f"500 error: {error}", exc_info=True)
+        app.logger.error(f"500 error: {error}")
         flash("An internal server error occurred. Please try again later.", "danger")
         return render_template("index.html"), 500
 
